@@ -51,6 +51,37 @@ Retrieve a past eval by ID.
 curl http://localhost:3000/evals/a1b2c3d4-...
 ```
 
+### GET /evals/:id/summary
+
+Get a comparison summary with scores and a winner verdict.
+
+```bash
+curl http://localhost:3000/evals/a1b2c3d4-.../summary
+```
+
+**Response:**
+
+```json
+{
+  "id": "a1b2c3d4-...",
+  "audio_url": "https://example.com/audio.wav",
+  "created_at": "2026-03-05T12:00:00Z",
+  "winner": "deepgram",
+  "verdict": "deepgram is 40% faster than assemblyai and 20% cheaper.",
+  "results": [
+    {
+      "vendor": "deepgram",
+      "latency_ms": 1200,
+      "cost_usd": 0.000215,
+      "words_per_second": 2.85,
+      "speed_score": 1.0,
+      "cost_score": 1.0,
+      "overall_score": 1.0
+    }
+  ]
+}
+```
+
 ### GET /vendors
 
 List supported vendors with capabilities and pricing.
