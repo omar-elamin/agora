@@ -131,6 +131,7 @@ def detect_confidence_format(raw_value: Any) -> ConfidenceFormat:
 def normalize_predictions(
     raw_predictions: list[dict],
     vendor_config: Optional[dict] = None,
+    vendor_id: Optional[str] = None,
 ) -> list[PredictionRecord]:
     """
     Convert raw API response dicts into PredictionRecords with normalized
@@ -141,6 +142,10 @@ def normalize_predictions(
 
     vendor_config can specify:
       - "confidence_format": override auto-detection with a ConfidenceFormat value name
+
+    vendor_id: if provided, look up the vendor registry for the known
+    confidence format. Falls back to auto-detect if vendor_id is not found.
+    Explicit vendor_config takes precedence over vendor_id registry lookup.
     """
     forced_format = None
     if vendor_config and "confidence_format" in vendor_config:
@@ -149,6 +154,11 @@ def normalize_predictions(
             forced_format = fmt_name
         else:
             forced_format = ConfidenceFormat(fmt_name)
+    elif vendor_id is not None:
+        from agora.eval.calibration.vendor_registry import get_vendor_config
+        vc = get_vendor_config(vendor_id)
+        if vc is not None:
+            forced_format = vc.confidence_format
 
     records: list[PredictionRecord] = []
     for entry in raw_predictions:

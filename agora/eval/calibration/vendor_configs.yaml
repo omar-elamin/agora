@@ -1,0 +1,30 @@
+# Vendor confidence configuration registry.
+# Maps vendor_id -> known confidence format and API quirks.
+
+deepgram:
+  confidence_format: probability
+  confidence_key_path: "results.channels[0].alternatives[0].confidence"
+  score_range: [0.0, 1.0]
+  quirks:
+    empty_segment_zero: "Returns 0.0 confidence for empty/silent segments"
+
+whisper:
+  confidence_format: logprob
+  confidence_key_path: "segments[].avg_logprob"
+  score_range: null  # (-inf, 0]
+  quirks:
+    no_speech_prob_separate: "no_speech_prob is a separate field, not part of confidence"
+
+assemblyai:
+  confidence_format: probability
+  confidence_key_path: "words[].confidence"
+  score_range: [0.0, 1.0]
+  quirks:
+    per_word_aggregation: "Confidence is per-word; needs aggregation for utterance-level scores"
+
+rev_ai:
+  confidence_format: probability
+  confidence_key_path: "monologues[].elements[].confidence"
+  score_range: [0.0, 1.0]
+  quirks:
+    label_endpoints: "Some endpoints return 'low'/'medium'/'high' labels instead of floats"
