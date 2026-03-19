@@ -1,8 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { validateApiKey } from "@/lib/auth";
-import { transcribe } from "@/lib/deepgram";
+import { transcribe as deepgramTranscribe } from "@/lib/deepgram";
+import { transcribe as whisperTranscribe } from "@/lib/whisper";
 import { kv } from "@/lib/kv";
+import { corsJson, corsOptions } from "@/lib/cors";
+import { detectRoutingFailure } from "@/lib/whisper-routing-detector";
+import type { WhisperVerboseOutput } from "@/lib/whisper-routing-detector";
 import crypto from "crypto";
+
+const SUPPORTED_VENDORS = ["deepgram", "whisper-large-v3"] as const;
+type Vendor = (typeof SUPPORTED_VENDORS)[number];
 
 function computeWER(hypothesis: string, reference: string): number {
   const hyp = hypothesis.toLowerCase().split(/\s+/).filter(Boolean);
@@ -28,34 +35,136 @@ function computeWER(hypothesis: string, reference: string): number {
   return parseFloat((d[ref.length][hyp.length] / ref.length).toFixed(4));
 }
 
+export async function OPTIONS() {
+  return corsOptions();
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get("x-api-key");
   const auth = await validateApiKey(apiKey);
   if (!auth.valid) {
-    return NextResponse.json({ error: auth.error }, { status: 401 });
+    return corsJson({ error: auth.error }, { status: 401 });
   }
 
   const body = await req.json();
-  const { audio_url, ground_truth } = body as {
+  const { audio_url, ground_truth, vendors } = body as {
     audio_url: string;
     ground_truth?: string;
+    vendors?: string[];
   };
 
   if (!audio_url) {
-    return NextResponse.json(
-      { error: "audio_url is required" },
+    return corsJson({ error: "audio_url is required" }, { status: 400 });
+  }
+
+  // Default to deepgram only for backward compat; accept vendors array
+  const requestedVendors: Vendor[] = vendors
+    ? (vendors.filter((v) => SUPPORTED_VENDORS.includes(v as Vendor)) as Vendor[])
+    : ["deepgram"];
+
+  if (requestedVendors.length === 0) {
+    return corsJson(
+      {
+        error: `No valid vendors specified. Supported: ${SUPPORTED_VENDORS.join(", ")}`,
+      },
       { status: 400 }
     );
   }
 
   const submitted_at = new Date().toISOString();
-  const result = await transcribe(audio_url);
+
+  // Run all vendors in parallel
+  const vendorResults = await Promise.allSettled(
+    requestedVendors.map(async (vendor) => {
+      if (vendor === "deepgram") {
+        const result = await deepgramTranscribe(audio_url);
+        return { vendor, ...result };
+      } else if (vendor === "whisper-large-v3") {
+        const result = await whisperTranscribe(audio_url);
+        return { vendor, ...result };
+      }
+      throw new Error(`Unknown vendor: ${vendor}`);
+    })
+  );
+
   const completed_at = new Date().toISOString();
 
-  const wer =
-    ground_truth !== undefined
-      ? computeWER(result.transcript, ground_truth)
-      : null;
+  const results = vendorResults
+    .map((r, i) => {
+      const vendor = requestedVendors[i];
+      if (r.status === "fulfilled") {
+        let { transcript, latency_ms, cost_usd, duration_seconds } = r.value;
+        const wer =
+          ground_truth !== undefined
+            ? computeWER(transcript, ground_truth)
+            : null;
+
+        let routing_failure = false;
+        let routing_failure_reason: string | null = null;
+
+        // Use verbose_json routing detection for Whisper results
+        if (vendor === "whisper-large-v3" && "segments" in r.value && r.value.segments.length > 0) {
+          const verboseOutput: WhisperVerboseOutput = {
+            task: "transcribe",
+            language: r.value.language,
+            duration: duration_seconds,
+            text: transcript,
+            segments: r.value.segments,
+          };
+          const detection = detectRoutingFailure(verboseOutput, r.value.language_probability);
+          if (detection.is_routing_failure) {
+            routing_failure = true;
+            routing_failure_reason = detection.reason;
+            if (detection.severity === "hard") {
+              transcript = "transcription failed: wrong language detected";
+            }
+          }
+        }
+
+        // WER>1.0 fallback when verbose data is missing
+        if (!routing_failure && wer !== null && wer > 1.0) {
+          routing_failure = true;
+          routing_failure_reason = `WER ${wer.toFixed(4)} exceeds 1.0 — likely routing failure`;
+        }
+
+        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, error: null };
+      } else {
+        return {
+          vendor,
+          transcript: null,
+          latency_ms: null,
+          cost_usd: null,
+          duration_seconds: null,
+          wer: null,
+          routing_failure: false,
+          routing_failure_reason: null,
+          error: r.reason?.message ?? "Unknown error",
+        };
+      }
+    });
+
+  // Rank by WER (lower is better), then latency
+  const ranked = [...results]
+    .filter((r) => r.transcript !== null && !r.routing_failure)
+    .sort((a, b) => {
+      if (a.wer !== null && b.wer !== null) return a.wer - b.wer;
+      if (a.wer !== null) return -1;
+      if (b.wer !== null) return 1;
+      return (a.latency_ms ?? Infinity) - (b.latency_ms ?? Infinity);
+    });
+
+  const rankedResults = results.map((r) => ({
+    ...r,
+    rank: ranked.findIndex((rr) => rr.vendor === r.vendor) + 1 || null,
+  }));
+
+  const bestAccuracy = ranked[0]?.vendor ?? requestedVendors[0];
+  const bestSpeed = [...results]
+    .filter((r) => r.latency_ms !== null)
+    .sort((a, b) => (a.latency_ms ?? Infinity) - (b.latency_ms ?? Infinity))[0]?.vendor ?? requestedVendors[0];
+  const bestCost = [...results]
+    .filter((r) => r.cost_usd !== null)
+    .sort((a, b) => (a.cost_usd ?? Infinity) - (b.cost_usd ?? Infinity))[0]?.vendor ?? requestedVendors[0];
 
   const eval_id = crypto.randomUUID();
 
@@ -64,25 +173,16 @@ export async function POST(req: NextRequest) {
     status: "complete" as const,
     submitted_at,
     completed_at,
-    results: [
-      {
-        vendor: "deepgram",
-        transcript: result.transcript,
-        latency_ms: result.latency_ms,
-        cost_usd: result.cost_usd,
-        wer,
-        rank: 1,
-      },
-    ],
+    vendors_requested: requestedVendors,
+    results: rankedResults,
     recommendation: {
-      best_accuracy: "deepgram",
-      best_speed: "deepgram",
-      best_cost: "deepgram",
-      balanced: "deepgram",
+      best_accuracy: bestAccuracy,
+      best_speed: bestSpeed,
+      best_cost: bestCost,
     },
   };
 
-  await kv.set(`eval:${eval_id}`, evalResult, 86400);
+  await kv.set(`eval:${eval_id}`, evalResult);
 
-  return NextResponse.json(evalResult);
+  return corsJson(evalResult);
 }

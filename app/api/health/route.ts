@@ -1,5 +1,9 @@
-import { NextResponse } from "next/server";
+import { corsJson, corsOptions } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 export async function GET() {
-  return NextResponse.json({ status: "ok", version: "0.1.0" });
+  return corsJson({ status: "ok", version: "0.1.0" });
 }

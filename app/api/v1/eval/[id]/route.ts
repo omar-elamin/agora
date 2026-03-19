@@ -1,5 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { kv } from "@/lib/kv";
+import { corsJson, corsOptions } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 export async function GET(
   _req: NextRequest,
@@ -9,8 +14,8 @@ export async function GET(
   const result = await kv.get(`eval:${id}`);
 
   if (!result) {
-    return NextResponse.json({ error: "Eval not found" }, { status: 404 });
+    return corsJson({ error: "Eval not found" }, { status: 404 });
   }
 
-  return NextResponse.json(result);
+  return corsJson(result);
 }

@@ -1,44 +1,41 @@
-// In-memory KV store using global scope so it persists across Next.js route handlers in dev.
-// Replace with Vercel KV (@vercel/kv) for production.
+import { put, head, del } from "@vercel/blob";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __kvStore: Map<string, unknown> | undefined;
-  // eslint-disable-next-line no-var
-  var __kvTimers: Map<string, ReturnType<typeof setTimeout>> | undefined;
-}
-
-const store: Map<string, unknown> =
-  global.__kvStore ?? (global.__kvStore = new Map());
-const timers: Map<string, ReturnType<typeof setTimeout>> =
-  global.__kvTimers ?? (global.__kvTimers = new Map());
+const PREFIX = "agora-kv/";
 
 export const kv = {
   async get(key: string): Promise<unknown> {
-    return store.get(key) ?? null;
+    try {
+      const url = await findBlobUrl(key);
+      if (!url) return null;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
-  async set(key: string, val: unknown, ttlSeconds?: number): Promise<void> {
-    store.set(key, val);
-    if (timers.has(key)) clearTimeout(timers.get(key)!);
-    if (ttlSeconds) {
-      timers.set(
-        key,
-        setTimeout(() => {
-          store.delete(key);
-          timers.delete(key);
-        }, ttlSeconds * 1000)
-      );
-    }
+  async set(key: string, val: unknown): Promise<void> {
+    await put(`${PREFIX}${key}.json`, JSON.stringify(val), {
+      access: "public",
+      addRandomSuffix: false,
+    });
   },
 
   async del(key: string): Promise<void> {
-    store.delete(key);
-    if (timers.has(key)) {
-      clearTimeout(timers.get(key)!);
-      timers.delete(key);
-    }
+    const url = await findBlobUrl(key);
+    if (url) await del(url);
   },
 };
+
+async function findBlobUrl(key: string): Promise<string | null> {
+  try {
+    const pathname = `${PREFIX}${key}.json`;
+    const blob = await head(pathname);
+    return blob.url;
+  } catch {
+    return null;
+  }
+}
 
 export default kv;

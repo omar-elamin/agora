@@ -1,0 +1,37 @@
+.page {
+  min-height: 100vh;
+  background: #0a0a0a;
+  padding: 48px 24px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+}
+
+.header {
+  max-width: 800px;
+  margin: 0 auto 32px;
+}
+
+.h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #f9fafb;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.mono {
+  color: #9ca3af;
+}
+
+.grid {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
