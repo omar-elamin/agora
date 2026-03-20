@@ -34,7 +34,9 @@ function CalculatorInner() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const isEmbed = searchParams.get("embed") === "true";
-  const activePreset = searchParams.get("preset") as PresetKey | null;
+  const [activePreset, setActivePreset] = useState<PresetKey | null>(
+    (searchParams.get("preset") as PresetKey | null)
+  );
 
   const [initVals, setInitVals] = useState({
     wa: Number(searchParams.get("wa")) || 20,
@@ -77,6 +79,7 @@ function CalculatorInner() {
       if (isEmbed) params.set("embed", "true");
       router.replace(`?${params.toString()}`, { scroll: false });
       setInitVals({ wa: p.wa, ea: p.ea, es: p.es, ar: p.ar, calls: p.calls, mpr: p.mpr, rate: p.rate });
+      setActivePreset(key);
       setResetKey((k) => k + 1);
     },
     [router, isEmbed],
