@@ -20,7 +20,7 @@ const FALLBACK_ACCENT_DATA: AccentGroupData[] = [
   { accent: "Hindi", wer: 5.8, ece: 0.022, cqs: "high", clips: 612 },
   { accent: "Arabic", wer: 7.4, ece: 0.018, cqs: "high", clips: 480 },
   { accent: "Farsi", wer: 9.1, ece: 0.053, cqs: "high", clips: 203 },
-  { accent: "Spanish (n=50)", wer: 14.2, ece: 0.091, cqs: "low", clips: 50 },
+  { accent: "Spanish", wer: 11.4, ece: 0.042, cqs: "moderate", clips: 934 },
   { accent: "French", wer: 7.1, ece: 0.013, cqs: "moderate", clips: 320 },
   { accent: "German", wer: 5.9, ece: 0.015, cqs: "moderate", clips: 280 },
 ];
@@ -83,9 +83,6 @@ export default async function EvalReportPage({
   let probeOverview: ProbeOverview | null = null;
   const knownBehaviors: KnownBehavior[] = getKnownBehaviors("assemblyai");
 
-  const vendorKey = scorecard.model.toLowerCase().includes("assemblyai") ? "assemblyai" : scorecard.model.split("/")[0];
-  const eastAsianGuidance = computeEastAsianGuidance(vendorKey, accentData, true);
-
   if (evalId) {
     const live = await fetchReportData(evalId);
     if (live) {
@@ -102,6 +99,9 @@ export default async function EvalReportPage({
       }
     }
   }
+
+  const vendorKey = scorecard.model.toLowerCase().includes("assemblyai") ? "assemblyai" : scorecard.model.split("/")[0];
+  const eastAsianGuidance = computeEastAsianGuidance(vendorKey, accentData, true);
 
   return (
     <div className={styles.page}>

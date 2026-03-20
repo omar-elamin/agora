@@ -45,7 +45,7 @@ export default function ModelScorecard({
 
   const rows: [string, React.ReactNode][] = [
     ["Model", data.model],
-    ["Eval Date", data.evalDate],
+    ["Eval Date", (() => { try { return new Date(data.evalDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }); } catch { return data.evalDate; } })()],
     ["Total Clips", data.totalClips.toLocaleString()],
     ["Overall WER", `${data.overallWer.toFixed(1)}%`],
     [
