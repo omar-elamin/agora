@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const NAV_ITEMS = [
   { label: "Home", href: "/" },
@@ -12,6 +12,9 @@ const NAV_ITEMS = [
 
 export default function NavHeader() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  if (searchParams.get("embed") === "true") return null;
 
   return (
     <nav

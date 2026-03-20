@@ -19,6 +19,7 @@ function CalculatorInner() {
   const initCalls = Number(searchParams.get("calls")) || 1000;
   const initMpr = Number(searchParams.get("mpr")) || 15;
   const initRate = Number(searchParams.get("rate")) || 25;
+  const isEmbed = searchParams.get("embed") === "true";
 
   const handleChange = useCallback(
     (v: ReviewCostValues) => {
@@ -45,13 +46,13 @@ function CalculatorInner() {
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "#0a0a1a",
+        ...(isEmbed ? {} : { minHeight: "100vh" }),
+        background: isEmbed ? "transparent" : "#0a0a1a",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "40px 16px",
+        padding: isEmbed ? "16px" : "40px 16px",
       }}
     >
       <div style={{ width: "100%", maxWidth: 800 }}>
@@ -75,35 +76,39 @@ function CalculatorInner() {
             marginTop: 16,
           }}
         >
-          <button
-            onClick={handleCopy}
-            style={{
-              background: copied ? "#10b981" : "#1a1a2e",
-              border: "1px solid #2a2a3e",
-              borderRadius: 8,
-              padding: "10px 20px",
-              color: "#f9fafb",
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              transition: "background 0.2s",
-            }}
-          >
-            {copied ? "Copied!" : "Copy link"}
-          </button>
+          {!isEmbed && (
+            <button
+              onClick={handleCopy}
+              style={{
+                background: copied ? "#10b981" : "#1a1a2e",
+                border: "1px solid #2a2a3e",
+                borderRadius: 8,
+                padding: "10px 20px",
+                color: "#f9fafb",
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "background 0.2s",
+              }}
+            >
+              {copied ? "Copied!" : "Copy link"}
+            </button>
+          )}
 
-          <a
-            href="/"
-            style={{
-              fontSize: 11,
-              color: "#6b7280",
-              textDecoration: "none",
-              letterSpacing: "0.02em",
-            }}
-          >
-            Powered by Agora
-          </a>
+          {!isEmbed && (
+            <a
+              href="/"
+              style={{
+                fontSize: 11,
+                color: "#6b7280",
+                textDecoration: "none",
+                letterSpacing: "0.02em",
+              }}
+            >
+              Powered by Agora
+            </a>
+          )}
         </div>
       </div>
     </div>

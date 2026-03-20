@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import NavHeader from "./components/NavHeader";
 
 export const metadata: Metadata = {
@@ -22,7 +23,9 @@ export default function RootLayout({
           color: "#e5e5e5",
         }}
       >
-        <NavHeader />
+        <Suspense fallback={null}>
+          <NavHeader />
+        </Suspense>
         {children}
       </body>
     </html>
