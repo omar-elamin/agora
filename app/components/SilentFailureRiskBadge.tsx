@@ -47,7 +47,10 @@ export default function SilentFailureRiskBadge({
         </div>
       )}
 
-      <p className={styles.rationale}>{risk.rationale}</p>
+      <details className={styles.details}>
+        <summary className={styles.summary}>show rationale</summary>
+        <p className={styles.rationale}>{risk.rationale}</p>
+      </details>
 
       {probeOverview && (
         <div className={styles.probeSection}>

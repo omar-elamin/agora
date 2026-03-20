@@ -121,6 +121,20 @@ export default function Home() {
           </li>
         </ul>
       </div>
+
+      <a
+        href="/compare"
+        style={{
+          color: "#4ade80",
+          fontSize: "0.9rem",
+          marginTop: "2rem",
+          display: "block",
+          textAlign: "center",
+          textDecoration: "none",
+        }}
+      >
+        Compare vendors →
+      </a>
     </main>
   );
 }

@@ -96,8 +96,27 @@
   line-height: 1.5;
 }
 
-.rationale {
+.details {
   margin-top: 12px;
+  border-top: 1px solid #1f2937;
+  padding-top: 8px;
+}
+
+.summary {
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.summary::marker,
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.rationale {
+  margin-top: 8px;
   font-size: 12px;
   color: #6b7280;
   line-height: 1.6;
