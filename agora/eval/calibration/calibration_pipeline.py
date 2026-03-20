@@ -26,7 +26,7 @@ def run_calibration_pipeline(
     n_bins: int = 15,
     high_conf_threshold: float = 0.85,
     trust_score_weights: Optional[TrustScoreWeights] = None,
-    normalize_first: bool = False,
+    normalize_first: bool = True,
     raw_predictions: Optional[list[dict]] = None,
     vendor_config: Optional[dict] = None,
 ) -> VendorCalibrationReport:
