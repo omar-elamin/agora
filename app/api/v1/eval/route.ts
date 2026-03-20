@@ -6,6 +6,7 @@ import { kv } from "@/lib/kv";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { detectRoutingFailure } from "@/lib/whisper-routing-detector";
 import type { WhisperVerboseOutput } from "@/lib/whisper-routing-detector";
+import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
 import crypto from "crypto";
 
 const SUPPORTED_VENDORS = ["deepgram", "whisper-large-v3"] as const;
@@ -127,7 +128,9 @@ export async function POST(req: NextRequest) {
           routing_failure_reason = `WER ${wer.toFixed(4)} exceeds 1.0 — likely routing failure`;
         }
 
-        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, error: null };
+        const silent_failure_risk = computeSilentFailureRisk({ vendor, wer, routing_failure, routing_failure_reason });
+
+        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, silent_failure_risk, error: null };
       } else {
         return {
           vendor,
@@ -138,6 +141,7 @@ export async function POST(req: NextRequest) {
           wer: null,
           routing_failure: false,
           routing_failure_reason: null,
+          silent_failure_risk: null,
           error: r.reason?.message ?? "Unknown error",
         };
       }
