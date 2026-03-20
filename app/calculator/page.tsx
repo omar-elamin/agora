@@ -33,15 +33,18 @@ function CalculatorInner() {
   const [resetKey, setResetKey] = useState(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const initWa = Number(searchParams.get("wa")) || 20;
-  const initEa = Number(searchParams.get("ea")) || 5;
-  const initEs = Number(searchParams.get("es")) || 5;
-  const initAr = Number(searchParams.get("ar")) || 5;
-  const initCalls = Number(searchParams.get("calls")) || 1000;
-  const initMpr = Number(searchParams.get("mpr")) || 15;
-  const initRate = Number(searchParams.get("rate")) || 25;
   const isEmbed = searchParams.get("embed") === "true";
   const activePreset = searchParams.get("preset") as PresetKey | null;
+
+  const [initVals, setInitVals] = useState({
+    wa: Number(searchParams.get("wa")) || 20,
+    ea: Number(searchParams.get("ea")) || 5,
+    es: Number(searchParams.get("es")) || 5,
+    ar: Number(searchParams.get("ar")) || 5,
+    calls: Number(searchParams.get("calls")) || 1000,
+    mpr: Number(searchParams.get("mpr")) || 15,
+    rate: Number(searchParams.get("rate")) || 25,
+  });
 
   const handleChange = useCallback(
     (v: ReviewCostValues) => {
@@ -73,6 +76,7 @@ function CalculatorInner() {
       params.set("rate", String(p.rate));
       if (isEmbed) params.set("embed", "true");
       router.replace(`?${params.toString()}`, { scroll: false });
+      setInitVals({ wa: p.wa, ea: p.ea, es: p.es, ar: p.ar, calls: p.calls, mpr: p.mpr, rate: p.rate });
       setResetKey((k) => k + 1);
     },
     [router, isEmbed],
@@ -132,13 +136,13 @@ function CalculatorInner() {
         )}
         <ReviewCostCalculator
           key={resetKey}
-          defaultPctWa={initWa}
-          defaultPctEa={initEa}
-          defaultPctEs={initEs}
-          defaultPctAr={initAr}
-          defaultCallsPerDay={initCalls}
-          defaultMinutesPerReview={initMpr}
-          defaultHourlyRate={initRate}
+          defaultPctWa={initVals.wa}
+          defaultPctEa={initVals.ea}
+          defaultPctEs={initVals.es}
+          defaultPctAr={initVals.ar}
+          defaultCallsPerDay={initVals.calls}
+          defaultMinutesPerReview={initVals.mpr}
+          defaultHourlyRate={initVals.rate}
           onChange={handleChange}
         />
 
