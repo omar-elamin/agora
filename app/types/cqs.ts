@@ -35,6 +35,14 @@ export interface DeploymentGuardCallout {
   threshold?: number;
 }
 
+export interface ProbeOverview {
+  adjusted_confidence: number | null;
+  probe_fds: number | null;
+  probe_result: string | null;
+  probe_verified: boolean | null;
+  escalate_to_audit: boolean;
+}
+
 export interface ModelScorecardData {
   model: string;
   evalDate: string;

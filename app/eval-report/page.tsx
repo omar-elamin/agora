@@ -1,4 +1,4 @@
-import type { AccentGroupData, ModelScorecardData, SilentFailureRisk, DeploymentGuardCallout } from "../types/cqs";
+import type { AccentGroupData, ModelScorecardData, SilentFailureRisk, DeploymentGuardCallout, ProbeOverview } from "../types/cqs";
 import AccentBreakdownTable from "../components/AccentBreakdownTable";
 import ModelScorecard from "../components/ModelScorecard";
 import SilentFailureRiskBadge from "../components/SilentFailureRiskBadge";
@@ -31,6 +31,7 @@ async function fetchReportData(
   accentGroups: AccentGroupData[];
   silentFailureRisk?: SilentFailureRisk;
   deploymentGuards?: DeploymentGuardCallout[];
+  probeOverview?: ProbeOverview;
 } | null> {
   try {
     const base =
@@ -45,6 +46,7 @@ async function fetchReportData(
       accentGroups: json.accentGroups,
       silentFailureRisk: json.silentFailureRisk,
       deploymentGuards: json.deploymentGuards,
+      probeOverview: json.probeOverview,
     };
   } catch {
     return null;
@@ -67,6 +69,7 @@ export default async function EvalReportPage({
     routing_failure_reason: null,
   });
   let deploymentGuards: DeploymentGuardCallout[] = computeDeploymentGuards("assemblyai", silentFailureRisk);
+  let probeOverview: ProbeOverview | null = null;
 
   if (evalId) {
     const live = await fetchReportData(evalId);
@@ -78,6 +81,9 @@ export default async function EvalReportPage({
       }
       if (live.deploymentGuards) {
         deploymentGuards = live.deploymentGuards;
+      }
+      if (live.probeOverview) {
+        probeOverview = live.probeOverview;
       }
     }
   }
@@ -94,7 +100,7 @@ export default async function EvalReportPage({
 
       <div className={styles.grid}>
         <ModelScorecard data={scorecard} />
-        <SilentFailureRiskBadge risk={silentFailureRisk} />
+        <SilentFailureRiskBadge risk={silentFailureRisk} probeOverview={probeOverview} />
         <DeploymentGuardCalloutCard guards={deploymentGuards} />
         <AccentBreakdownTable data={accentData} />
       </div>

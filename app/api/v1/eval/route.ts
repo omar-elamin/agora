@@ -15,7 +15,11 @@ import type {
   FDSResult,
   TrustScoreResult,
 } from "@/lib/calibration-types";
+import { ProbeService } from "@/lib/probe-service";
+import type { ValidationProbeResult } from "@/lib/probe-service";
 import crypto from "crypto";
+
+const probeService = new ProbeService();
 
 const SUPPORTED_VENDORS = ["deepgram", "whisper-large-v3"] as const;
 type Vendor = (typeof SUPPORTED_VENDORS)[number];
@@ -139,7 +143,23 @@ export async function POST(req: NextRequest) {
         const silent_failure_risk = computeSilentFailureRisk({ vendor, wer, routing_failure, routing_failure_reason });
         const deployment_guards = computeDeploymentGuards(vendor, silent_failure_risk);
 
-        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, silent_failure_risk, deployment_guards, error: null };
+        // Run language validation probe
+        let validation_probe: ValidationProbeResult | null = null;
+        let adjusted_confidence: number | null = null;
+        const declaredLang = ("language" in r.value && typeof r.value.language === "string")
+          ? r.value.language
+          : "en";
+        const primaryConfidence = ("language_probability" in r.value && typeof r.value.language_probability === "number")
+          ? r.value.language_probability
+          : null;
+
+        if (transcript && primaryConfidence !== null) {
+          const probeOut = probeService.run(transcript, declaredLang, primaryConfidence);
+          validation_probe = probeOut.probe;
+          adjusted_confidence = probeOut.adjusted_confidence;
+        }
+
+        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, silent_failure_risk, deployment_guards, validation_probe, adjusted_confidence, primary_confidence: primaryConfidence, error: null };
       } else {
         return {
           vendor,
@@ -152,6 +172,9 @@ export async function POST(req: NextRequest) {
           routing_failure_reason: null,
           silent_failure_risk: null,
           deployment_guards: [],
+          validation_probe: null,
+          adjusted_confidence: null,
+          primary_confidence: null,
           error: r.reason?.message ?? "Unknown error",
         };
       }

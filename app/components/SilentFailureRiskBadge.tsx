@@ -1,4 +1,4 @@
-import type { SilentFailureRisk, SilentFailureRating } from "../types/cqs";
+import type { SilentFailureRisk, SilentFailureRating, ProbeOverview } from "../types/cqs";
 import styles from "./SilentFailureRiskBadge.module.css";
 
 const BADGE_CLASS: Record<SilentFailureRating, string> = {
@@ -17,8 +17,10 @@ const DIRECTION_LABEL: Record<string, string> = {
 
 export default function SilentFailureRiskBadge({
   risk,
+  probeOverview,
 }: {
   risk: SilentFailureRisk;
+  probeOverview?: ProbeOverview | null;
 }) {
   const conf = risk.confidence_at_failure;
   const hasConf = conf && (conf.min !== null || conf.max !== null);
@@ -46,6 +48,26 @@ export default function SilentFailureRiskBadge({
       )}
 
       <p className={styles.rationale}>{risk.rationale}</p>
+
+      {probeOverview && (
+        <div className={styles.probeSection}>
+          {probeOverview.probe_result === "disagree" || probeOverview.probe_result === "script_mismatch" ? (
+            <span className={styles.probeDetected}>probe detected mismatch</span>
+          ) : probeOverview.probe_verified ? (
+            <span className={styles.probeVerified}>probe verified</span>
+          ) : null}
+          {probeOverview.adjusted_confidence !== null && (
+            <span className={styles.adjustedConf}>
+              adjusted confidence: {probeOverview.adjusted_confidence.toFixed(4)}
+            </span>
+          )}
+          {probeOverview.probe_fds !== null && (
+            <span className={styles.probeFds}>
+              FDS: {probeOverview.probe_fds.toFixed(4)}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
