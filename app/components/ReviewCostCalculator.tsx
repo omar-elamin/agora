@@ -205,10 +205,13 @@ export default function ReviewCostCalculator({
           /month in unnecessary reviews
         </p>
         <p className={styles.calloutSub}>
-          Blended false-positive rate: {(blendedRate * 100).toFixed(1)}% across{" "}
-          {ACCENT_KEYS.filter((k) => accents[k] > 0).length} accent group
-          {ACCENT_KEYS.filter((k) => accents[k] > 0).length !== 1 ? "s" : ""} at
-          0.85 confidence threshold (Deepgram: 0%)
+          {(() => {
+            const activeCount = ACCENT_KEYS.filter((k) => accents[k] > 0).length;
+            const groupLabel = activeCount === 0
+              ? "no accent groups (standard traffic only)"
+              : `${activeCount} accent group${activeCount !== 1 ? "s" : ""}`;
+            return `Blended false-positive rate: ${(blendedRate * 100).toFixed(1)}% across ${groupLabel} at 0.85 confidence threshold (Deepgram: 0%)`;
+          })()}
         </p>
       </div>
 
