@@ -1,0 +1,59 @@
+.container {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f9fafb;
+  margin-bottom: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #1f2937;
+}
+
+.table td {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #e5e7eb;
+}
+
+.failureRow {
+  border-left: 3px solid #ef4444;
+}
+
+.failureRow td {
+  color: #fca5a5;
+}
+
+.mono {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 0.8125rem;
+}
+
+.warning {
+  font-size: 0.8125rem;
+  color: #d1d5db;
+  line-height: 1.5;
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #ef4444;
+}

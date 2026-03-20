@@ -24,9 +24,14 @@ export default function CqsRecommendations({ data }: { data: AccentGroupData[] }
             ) : (
               <>
                 For <span className={styles.accent}>{g.accent}</span> callers,
-                confidence scores are not reliably predictive. Do not use confidence
-                for routing or automation — implement a fallback layer or per-speaker
-                adaptation.
+                confidence scores are not reliably predictive of accuracy. Q1
+                clips range from 0% to 88% accuracy within a narrow confidence
+                band. Hard clips like{" "}
+                <span className={styles.mono}>spanish3</span> and{" "}
+                <span className={styles.mono}>spanish21</span> show complete
+                transcription failures at moderate confidence. Do not use
+                confidence for routing — implement human review for all clips in
+                this accent group.
               </>
             )}
           </div>

@@ -12,18 +12,22 @@ import { getKnownBehaviors } from "@/lib/known-behaviors";
 import styles from "./page.module.css";
 
 import ReviewCostCalculator from "../components/ReviewCostCalculator";
+import HardClipCallout from "../components/HardClipCallout";
 
 const FALLBACK_ACCENT_DATA: AccentGroupData[] = [
   { accent: "East Asian", wer: 6.2, ece: 0.024, cqs: "high", clips: 847 },
-  { accent: "French", wer: 7.1, ece: 0.025, cqs: "high", clips: 612 },
-  { accent: "Spanish", wer: 11.4, ece: 0.042, cqs: "moderate", clips: 934 },
-  { accent: "Farsi", wer: 13.8, ece: 0.048, cqs: "moderate", clips: 203 },
+  { accent: "Hindi", wer: 5.8, ece: 0.022, cqs: "high", clips: 612 },
+  { accent: "Arabic", wer: 7.4, ece: 0.018, cqs: "high", clips: 480 },
+  { accent: "Farsi", wer: 9.1, ece: 0.053, cqs: "high", clips: 203 },
+  { accent: "Spanish (n=50)", wer: 14.2, ece: 0.091, cqs: "low", clips: 50 },
+  { accent: "French", wer: 7.1, ece: 0.013, cqs: "moderate", clips: 320 },
+  { accent: "German", wer: 5.9, ece: 0.015, cqs: "moderate", clips: 280 },
 ];
 
 const FALLBACK_SCORECARD: ModelScorecardData = {
   model: "assemblyai/universal-2",
   evalDate: "2026-03-19",
-  totalClips: 2596,
+  totalClips: 2792,
   overallWer: 9.6,
   ece: 0.034,
   threshold: 4.0,
@@ -117,6 +121,7 @@ export default async function EvalReportPage({
         <KnownBehaviorsCard behaviors={knownBehaviors} />
         <AccentBreakdownTable data={accentData} />
         <CqsRecommendations data={accentData} />
+        <HardClipCallout />
       </div>
     </div>
   );
