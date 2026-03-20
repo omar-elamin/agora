@@ -1,8 +1,10 @@
-import type { AccentGroupData, ModelScorecardData, SilentFailureRisk } from "../types/cqs";
+import type { AccentGroupData, ModelScorecardData, SilentFailureRisk, DeploymentGuardCallout } from "../types/cqs";
 import AccentBreakdownTable from "../components/AccentBreakdownTable";
 import ModelScorecard from "../components/ModelScorecard";
 import SilentFailureRiskBadge from "../components/SilentFailureRiskBadge";
+import DeploymentGuardCalloutCard from "../components/DeploymentGuardCallout";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
+import { computeDeploymentGuards } from "@/lib/deployment-guards";
 import styles from "./page.module.css";
 
 const FALLBACK_ACCENT_DATA: AccentGroupData[] = [
@@ -28,6 +30,7 @@ async function fetchReportData(
   scorecard: ModelScorecardData;
   accentGroups: AccentGroupData[];
   silentFailureRisk?: SilentFailureRisk;
+  deploymentGuards?: DeploymentGuardCallout[];
 } | null> {
   try {
     const base =
@@ -41,6 +44,7 @@ async function fetchReportData(
       scorecard: json.scorecard,
       accentGroups: json.accentGroups,
       silentFailureRisk: json.silentFailureRisk,
+      deploymentGuards: json.deploymentGuards,
     };
   } catch {
     return null;
@@ -62,6 +66,7 @@ export default async function EvalReportPage({
     routing_failure: true,
     routing_failure_reason: null,
   });
+  let deploymentGuards: DeploymentGuardCallout[] = computeDeploymentGuards("assemblyai", silentFailureRisk);
 
   if (evalId) {
     const live = await fetchReportData(evalId);
@@ -70,6 +75,9 @@ export default async function EvalReportPage({
       accentData = live.accentGroups;
       if (live.silentFailureRisk) {
         silentFailureRisk = live.silentFailureRisk;
+      }
+      if (live.deploymentGuards) {
+        deploymentGuards = live.deploymentGuards;
       }
     }
   }
@@ -87,6 +95,7 @@ export default async function EvalReportPage({
       <div className={styles.grid}>
         <ModelScorecard data={scorecard} />
         <SilentFailureRiskBadge risk={silentFailureRisk} />
+        <DeploymentGuardCalloutCard guards={deploymentGuards} />
         <AccentBreakdownTable data={accentData} />
       </div>
     </div>

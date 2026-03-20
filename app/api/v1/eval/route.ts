@@ -7,6 +7,7 @@ import { corsJson, corsOptions } from "@/lib/cors";
 import { detectRoutingFailure } from "@/lib/whisper-routing-detector";
 import type { WhisperVerboseOutput } from "@/lib/whisper-routing-detector";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
+import { computeDeploymentGuards } from "@/lib/deployment-guards";
 import { runCalibration } from "@/lib/calibration";
 import type {
   PredictionRecord,
@@ -136,8 +137,9 @@ export async function POST(req: NextRequest) {
         }
 
         const silent_failure_risk = computeSilentFailureRisk({ vendor, wer, routing_failure, routing_failure_reason });
+        const deployment_guards = computeDeploymentGuards(vendor, silent_failure_risk);
 
-        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, silent_failure_risk, error: null };
+        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, silent_failure_risk, deployment_guards, error: null };
       } else {
         return {
           vendor,
@@ -149,6 +151,7 @@ export async function POST(req: NextRequest) {
           routing_failure: false,
           routing_failure_reason: null,
           silent_failure_risk: null,
+          deployment_guards: [],
           error: r.reason?.message ?? "Unknown error",
         };
       }

@@ -26,6 +26,15 @@ export interface SilentFailureRisk {
   rationale: string;
 }
 
+export interface DeploymentGuardCallout {
+  vendor: string;
+  severity: "required" | "recommended";
+  guard_type: "confidence_floor" | "language_detection" | "threshold_tuning";
+  description: string;
+  affected_languages: string[];
+  threshold?: number;
+}
+
 export interface ModelScorecardData {
   model: string;
   evalDate: string;
