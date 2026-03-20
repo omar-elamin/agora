@@ -5,6 +5,8 @@ import { useEffect, useState, Suspense, useMemo } from "react";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
 import type { SilentFailureRisk } from "@/app/types/cqs";
 import SilentFailureRiskBadge from "@/app/components/SilentFailureRiskBadge";
+import SfrComparisonGrid from "@/app/components/SfrComparisonGrid";
+import type { VendorSfrEntry } from "@/app/components/SfrComparisonGrid";
 import styles from "./page.module.css";
 
 interface VendorData {
@@ -151,6 +153,16 @@ function ComparePageInner() {
     });
   }, [vendors, sortKey]);
 
+  const sfrEntries: VendorSfrEntry[] = useMemo(
+    () =>
+      sortedVendors.map((v) => ({
+        vendor: v.name,
+        risk: v.risk,
+        probeOverview: null,
+      })),
+    [sortedVendors]
+  );
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -199,6 +211,11 @@ function ComparePageInner() {
           </div>
         ))}
       </div>
+
+      <section className={styles.sfrSection}>
+        <h2 className={styles.h2}>Silent Failure Risk Comparison</h2>
+        <SfrComparisonGrid vendors={sfrEntries} />
+      </section>
 
       <div className={styles.header}>
         <a href="/" className={styles.backLink}>
