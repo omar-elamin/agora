@@ -3,9 +3,10 @@ import AccentBreakdownTable from "../components/AccentBreakdownTable";
 import ModelScorecard from "../components/ModelScorecard";
 import SilentFailureRiskBadge from "../components/SilentFailureRiskBadge";
 import DeploymentGuardCalloutCard from "../components/DeploymentGuardCallout";
+import EastAsianDeploymentGuidanceCard from "../components/EastAsianDeploymentGuidance";
 import KnownBehaviorsCard from "../components/KnownBehaviors";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
-import { computeDeploymentGuards } from "@/lib/deployment-guards";
+import { computeDeploymentGuards, computeEastAsianGuidance } from "@/lib/deployment-guards";
 import { getKnownBehaviors } from "@/lib/known-behaviors";
 import styles from "./page.module.css";
 
@@ -19,7 +20,7 @@ const FALLBACK_ACCENT_DATA: AccentGroupData[] = [
 ];
 
 const FALLBACK_SCORECARD: ModelScorecardData = {
-  model: "openai/whisper-large-v3",
+  model: "assemblyai/universal-2",
   evalDate: "2026-03-19",
   totalClips: 2596,
   overallWer: 9.6,
@@ -72,9 +73,12 @@ export default async function EvalReportPage({
     routing_failure: true,
     routing_failure_reason: null,
   });
-  let deploymentGuards: DeploymentGuardCallout[] = computeDeploymentGuards("assemblyai", silentFailureRisk);
+  let deploymentGuards: DeploymentGuardCallout[] = computeDeploymentGuards("assemblyai");
   let probeOverview: ProbeOverview | null = null;
   const knownBehaviors: KnownBehavior[] = getKnownBehaviors("assemblyai");
+
+  const vendorKey = scorecard.model.toLowerCase().includes("assemblyai") ? "assemblyai" : scorecard.model.split("/")[0];
+  const eastAsianGuidance = computeEastAsianGuidance(vendorKey, accentData, true);
 
   if (evalId) {
     const live = await fetchReportData(evalId);
@@ -108,6 +112,7 @@ export default async function EvalReportPage({
         <SilentFailureRiskBadge risk={silentFailureRisk} probeOverview={probeOverview} />
         <ReviewCostCalculator />
         <DeploymentGuardCalloutCard guards={deploymentGuards} />
+        <EastAsianDeploymentGuidanceCard guidance={eastAsianGuidance} />
         <KnownBehaviorsCard behaviors={knownBehaviors} />
         <AccentBreakdownTable data={accentData} />
       </div>

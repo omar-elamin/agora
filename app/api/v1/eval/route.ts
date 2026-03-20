@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
         }
 
         const silent_failure_risk = computeSilentFailureRisk({ vendor, wer, routing_failure, routing_failure_reason });
-        const deployment_guards = computeDeploymentGuards(vendor, silent_failure_risk);
+        const deployment_guards = computeDeploymentGuards(vendor);
 
         // Run language validation probe
         let validation_probe: ValidationProbeResult | null = null;

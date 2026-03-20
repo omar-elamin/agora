@@ -1,0 +1,56 @@
+.card {
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 1rem 0;
+}
+
+.amberCallout {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: #f59e0b;
+  line-height: 1.5;
+}
+
+.redWarning {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: #f87171;
+  line-height: 1.5;
+}
+
+.checklistTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #a0a0c0;
+  margin: 0 0 0.5rem 0;
+}
+
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.checkItem {
+  font-size: 0.85rem;
+  color: #6ee7b7;
+  padding: 0.25rem 0;
+  line-height: 1.5;
+}

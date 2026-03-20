@@ -54,6 +54,23 @@ export interface KnownBehavior {
   recommendation: string;
 }
 
+export interface EastAsianDeploymentGuidance {
+  vendor: string;
+  hasEastAsianClips: boolean;
+  thresholdGuard: {
+    required: boolean;
+    threshold: number;
+    rationale: string;
+  };
+  korean10Brittleness?: {
+    clipId: string;
+    confidence: number;
+    wer: number;
+    warning: string;
+  };
+  checklist: string[];
+}
+
 export interface ModelScorecardData {
   model: string;
   evalDate: string;
