@@ -1,16 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styles from "./ReviewCostCalculator.module.css";
 
 const AAI_FALSE_POSITIVE_RATE = 0.667;
 const WORKING_DAYS_PER_MONTH = 22;
 
-export default function ReviewCostCalculator() {
-  const [pctWa, setPctWa] = useState(20);
-  const [callsPerDay, setCallsPerDay] = useState(1000);
-  const [minutesPerReview, setMinutesPerReview] = useState(15);
-  const [hourlyRate, setHourlyRate] = useState(25);
+export interface ReviewCostValues {
+  pctWa: number;
+  callsPerDay: number;
+  minutesPerReview: number;
+  hourlyRate: number;
+}
+
+interface ReviewCostCalculatorProps {
+  defaultPctWa?: number;
+  defaultCallsPerDay?: number;
+  defaultMinutesPerReview?: number;
+  defaultHourlyRate?: number;
+  onChange?: (values: ReviewCostValues) => void;
+}
+
+export default function ReviewCostCalculator({
+  defaultPctWa = 20,
+  defaultCallsPerDay = 1000,
+  defaultMinutesPerReview = 15,
+  defaultHourlyRate = 25,
+  onChange,
+}: ReviewCostCalculatorProps = {}) {
+  const [pctWa, setPctWa] = useState(defaultPctWa);
+  const [callsPerDay, setCallsPerDay] = useState(defaultCallsPerDay);
+  const [minutesPerReview, setMinutesPerReview] = useState(defaultMinutesPerReview);
+  const [hourlyRate, setHourlyRate] = useState(defaultHourlyRate);
+
+  const stableOnChange = useCallback((v: ReviewCostValues) => { onChange?.(v); }, [onChange]);
+
+  useEffect(() => {
+    stableOnChange({ pctWa, callsPerDay, minutesPerReview, hourlyRate });
+  }, [pctWa, callsPerDay, minutesPerReview, hourlyRate, stableOnChange]);
 
   const waCalls = callsPerDay * (pctWa / 100);
   const aaiQueue = waCalls * AAI_FALSE_POSITIVE_RATE;
