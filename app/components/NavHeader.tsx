@@ -1,0 +1,58 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const NAV_ITEMS = [
+  { label: "Home", href: "/" },
+  { label: "Compare", href: "/compare" },
+  { label: "Eval Report", href: "/eval-report" },
+  { label: "Calculator", href: "/calculator" },
+];
+
+export default function NavHeader() {
+  const pathname = usePathname();
+
+  return (
+    <nav
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "1.5rem",
+        padding: "0.75rem 1.5rem",
+        borderBottom: "1px solid #222",
+        backgroundColor: "#0a0a0a",
+        fontSize: "0.85rem",
+      }}
+    >
+      <span
+        style={{
+          fontWeight: 700,
+          fontSize: "1rem",
+          color: "#e5e5e5",
+          marginRight: "1rem",
+        }}
+      >
+        Agora
+      </span>
+      {NAV_ITEMS.map(({ label, href }) => {
+        const isActive = pathname === href;
+        return (
+          <Link
+            key={href}
+            href={href}
+            style={{
+              color: isActive ? "#fff" : "#666",
+              textDecoration: "none",
+              borderBottom: isActive ? "1px solid #fff" : "1px solid transparent",
+              paddingBottom: "2px",
+              transition: "color 0.15s",
+            }}
+          >
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NavHeader from "./components/NavHeader";
 
 export const metadata: Metadata = {
   title: "Agora",
@@ -21,6 +22,7 @@ export default function RootLayout({
           color: "#e5e5e5",
         }}
       >
+        <NavHeader />
         {children}
       </body>
     </html>

@@ -13,6 +13,9 @@ function CalculatorInner() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const initWa = Number(searchParams.get("wa")) || 20;
+  const initEa = Number(searchParams.get("ea")) || 5;
+  const initEs = Number(searchParams.get("es")) || 5;
+  const initAr = Number(searchParams.get("ar")) || 5;
   const initCalls = Number(searchParams.get("calls")) || 1000;
   const initMpr = Number(searchParams.get("mpr")) || 15;
   const initRate = Number(searchParams.get("rate")) || 25;
@@ -21,6 +24,9 @@ function CalculatorInner() {
     (v: ReviewCostValues) => {
       const params = new URLSearchParams();
       params.set("wa", String(v.pctWa));
+      params.set("ea", String(v.pctEa));
+      params.set("es", String(v.pctEs));
+      params.set("ar", String(v.pctAr));
       params.set("calls", String(v.callsPerDay));
       params.set("mpr", String(v.minutesPerReview));
       params.set("rate", String(v.hourlyRate));
@@ -51,6 +57,9 @@ function CalculatorInner() {
       <div style={{ width: "100%", maxWidth: 800 }}>
         <ReviewCostCalculator
           defaultPctWa={initWa}
+          defaultPctEa={initEa}
+          defaultPctEs={initEs}
+          defaultPctAr={initAr}
           defaultCallsPerDay={initCalls}
           defaultMinutesPerReview={initMpr}
           defaultHourlyRate={initRate}

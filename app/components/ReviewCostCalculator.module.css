@@ -14,6 +14,24 @@
   letter-spacing: 0.02em;
 }
 
+.accentSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #12121f;
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+}
+
+.accentSectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a0a0b8;
+  letter-spacing: 0.03em;
+}
+
 .inputs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
