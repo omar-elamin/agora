@@ -30,8 +30,8 @@ export interface CalibrationResult {
   n_total: number;
   n_bins: number;
   bins: BinStats[];
-  ece: number;
-  mce: number;
+  ece: number | null;
+  mce: number | null;
   brier_score: number | null;
   label: string;
   label_color: string;

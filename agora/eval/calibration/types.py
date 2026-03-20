@@ -41,8 +41,8 @@ class CalibrationResult:
     n_total: int
     n_bins: int
     bins: list[BinStats]
-    ece: float
-    mce: float
+    ece: Optional[float]
+    mce: Optional[float]
     brier_score: Optional[float] = None
     label: str = ""
     label_color: str = ""

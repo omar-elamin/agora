@@ -204,16 +204,17 @@ export async function POST(req: NextRequest) {
   if (ground_truth) {
     for (const r of rankedResults) {
       if (r.transcript) {
+        const hasConfidence = r.vendor === "deepgram" && "confidence" in r && r.confidence !== null;
         const pred: PredictionRecord = {
           example_id: eval_id_cal,
           vendor_id: r.vendor,
           predicted_label: r.transcript.trim(),
           ground_truth_label: ground_truth,
-          confidence: 1.0,
+          confidence: hasConfidence ? (r as { confidence: number }).confidence : 1.0,
           full_probs: null,
           task_category: "asr",
           eval_date: today,
-          confidence_available: false,
+          confidence_available: hasConfidence,
         };
         allPredictions[r.vendor] = [pred];
       }

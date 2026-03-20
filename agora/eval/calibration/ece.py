@@ -15,6 +15,9 @@ def compute_ece(
         ValueError: if predictions list is empty
         ValueError: if predictions span multiple vendors
         ValueError: if any confidence score is outside [0.0, 1.0]
+
+    Returns a stub CalibrationResult with label='insufficient_data' and
+    ece=None/mce=None when no predictions have confidence_available=True.
     """
     if not predictions:
         raise ValueError("predictions list is empty")
@@ -37,7 +40,19 @@ def compute_ece(
             )
 
     if not available:
-        raise ValueError("No predictions with confidence_available=True")
+        vendor_id = predictions[0].vendor_id
+        return CalibrationResult(
+            vendor_id=vendor_id,
+            task_category=predictions[0].task_category,
+            eval_date=predictions[0].eval_date,
+            n_total=0,
+            n_bins=n_bins,
+            bins=[],
+            ece=None,
+            mce=None,
+            label="insufficient_data",
+            label_color="gray",
+        )
 
     bins = _build_bins(n_bins)
     binned = _assign_to_bins(available, bins)
