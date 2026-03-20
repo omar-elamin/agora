@@ -7,6 +7,8 @@ import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
 import { computeDeploymentGuards } from "@/lib/deployment-guards";
 import styles from "./page.module.css";
 
+import ReviewCostCalculator from "../components/ReviewCostCalculator";
+
 const FALLBACK_ACCENT_DATA: AccentGroupData[] = [
   { accent: "East Asian", wer: 6.2, ece: 0.024, cqs: "high", clips: 847 },
   { accent: "French", wer: 7.1, ece: 0.025, cqs: "high", clips: 612 },
@@ -101,6 +103,7 @@ export default async function EvalReportPage({
       <div className={styles.grid}>
         <ModelScorecard data={scorecard} />
         <SilentFailureRiskBadge risk={silentFailureRisk} probeOverview={probeOverview} />
+        <ReviewCostCalculator />
         <DeploymentGuardCalloutCard guards={deploymentGuards} />
         <AccentBreakdownTable data={accentData} />
       </div>
