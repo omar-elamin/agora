@@ -1,6 +1,8 @@
-import type { AccentGroupData, ModelScorecardData } from "../types/cqs";
+import type { AccentGroupData, ModelScorecardData, SilentFailureRisk } from "../types/cqs";
 import AccentBreakdownTable from "../components/AccentBreakdownTable";
 import ModelScorecard from "../components/ModelScorecard";
+import SilentFailureRiskBadge from "../components/SilentFailureRiskBadge";
+import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
 import styles from "./page.module.css";
 
 const FALLBACK_ACCENT_DATA: AccentGroupData[] = [
@@ -22,7 +24,11 @@ const FALLBACK_SCORECARD: ModelScorecardData = {
 
 async function fetchReportData(
   evalId: string,
-): Promise<{ scorecard: ModelScorecardData; accentGroups: AccentGroupData[] } | null> {
+): Promise<{
+  scorecard: ModelScorecardData;
+  accentGroups: AccentGroupData[];
+  silentFailureRisk?: SilentFailureRisk;
+} | null> {
   try {
     const base =
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -31,7 +37,11 @@ async function fetchReportData(
     });
     if (!res.ok) return null;
     const json = await res.json();
-    return { scorecard: json.scorecard, accentGroups: json.accentGroups };
+    return {
+      scorecard: json.scorecard,
+      accentGroups: json.accentGroups,
+      silentFailureRisk: json.silentFailureRisk,
+    };
   } catch {
     return null;
   }
@@ -46,12 +56,21 @@ export default async function EvalReportPage({
 
   let scorecard = FALLBACK_SCORECARD;
   let accentData: AccentGroupData[] = FALLBACK_ACCENT_DATA;
+  let silentFailureRisk: SilentFailureRisk = computeSilentFailureRisk({
+    vendor: "assemblyai",
+    wer: null,
+    routing_failure: true,
+    routing_failure_reason: null,
+  });
 
   if (evalId) {
     const live = await fetchReportData(evalId);
     if (live) {
       scorecard = live.scorecard;
       accentData = live.accentGroups;
+      if (live.silentFailureRisk) {
+        silentFailureRisk = live.silentFailureRisk;
+      }
     }
   }
 
@@ -67,6 +86,7 @@ export default async function EvalReportPage({
 
       <div className={styles.grid}>
         <ModelScorecard data={scorecard} />
+        <SilentFailureRiskBadge risk={silentFailureRisk} />
         <AccentBreakdownTable data={accentData} />
       </div>
     </div>
