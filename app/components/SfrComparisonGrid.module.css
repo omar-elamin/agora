@@ -1,0 +1,155 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 639px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.column {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.columnBest {
+  composes: column;
+  border-color: #065f46;
+  box-shadow: 0 0 12px 2px rgba(52, 211, 153, 0.12);
+}
+
+.vendorName {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+  letter-spacing: 0.02em;
+}
+
+.bestLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #34d399;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-left: 8px;
+}
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  user-select: none;
+  letter-spacing: 0.04em;
+}
+
+.badgeLow {
+  composes: badge;
+  background: #065f46;
+  color: #34d399;
+}
+
+.badgeMedium {
+  composes: badge;
+  background: #78350f;
+  color: #fbbf24;
+}
+
+.badgeHigh {
+  composes: badge;
+  background: #7c2d12;
+  color: #fb923c;
+}
+
+.badgeCritical {
+  composes: badge;
+  background: #991b1b;
+  color: #fee2e2;
+  border: 2px solid #ef4444;
+  animation: pulseBorder 2s ease-in-out infinite;
+}
+
+@keyframes pulseBorder {
+  0%, 100% {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  50% {
+    border-color: #f87171;
+    box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.35);
+  }
+}
+
+.direction {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.confRange {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.thresholdGuard {
+  padding: 10px 14px;
+  background: #1c1917;
+  border: 1px solid #78350f;
+  border-left: 3px solid #fbbf24;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #fde68a;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.probeSection {
+  padding: 10px 14px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.probeDetected {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.probeVerified {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.adjustedConf {
+  color: #9ca3af;
+}
+
+.probeFds {
+  color: #9ca3af;
+}
