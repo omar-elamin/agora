@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
     if (preds.length > 0) {
       try {
         const report = runCalibration(vendor, preds, predictionsByVendor);
-        overall = { ece: report.calibration.ece, mce: report.calibration.mce, n_clips: preds.length };
+        overall = { ece: report.calibration.ece ?? 0, mce: report.calibration.mce ?? 0, n_clips: preds.length };
       } catch (err) {
         console.error(`[batch-calibration] ${vendor} overall failed:`, err);
       }
@@ -248,7 +248,7 @@ export async function POST(req: NextRequest) {
       try {
         const groupAllPreds: Record<string, PredictionRecord[]> = { [vendor]: groupPreds };
         const report = runCalibration(vendor, groupPreds, groupAllPreds);
-        byGroup[group] = { ece: report.calibration.ece, mce: report.calibration.mce, n_clips: groupPreds.length };
+        byGroup[group] = { ece: report.calibration.ece ?? 0, mce: report.calibration.mce ?? 0, n_clips: groupPreds.length };
       } catch (err) {
         console.error(`[batch-calibration] ${vendor}/${group} failed:`, err);
         byGroup[group] = { ece: 0, mce: 0, n_clips: groupPreds.length };
