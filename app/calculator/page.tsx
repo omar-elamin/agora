@@ -6,10 +6,31 @@ import ReviewCostCalculator, {
   type ReviewCostValues,
 } from "../components/ReviewCostCalculator";
 
+const PRESETS = {
+  small: {
+    label: "Small team",
+    wa: 15, ea: 0, es: 0, ar: 0,
+    calls: 1000, mpr: 5, rate: 25,
+  },
+  midmarket: {
+    label: "Mid-market",
+    wa: 22, ea: 3, es: 2, ar: 2,
+    calls: 10000, mpr: 8, rate: 35,
+  },
+  enterprise: {
+    label: "Enterprise",
+    wa: 30, ea: 5, es: 3, ar: 3,
+    calls: 100000, mpr: 12, rate: 50,
+  },
+} as const;
+
+type PresetKey = keyof typeof PRESETS;
+
 function CalculatorInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const initWa = Number(searchParams.get("wa")) || 20;
@@ -20,6 +41,7 @@ function CalculatorInner() {
   const initMpr = Number(searchParams.get("mpr")) || 15;
   const initRate = Number(searchParams.get("rate")) || 25;
   const isEmbed = searchParams.get("embed") === "true";
+  const activePreset = searchParams.get("preset") as PresetKey | null;
 
   const handleChange = useCallback(
     (v: ReviewCostValues) => {
@@ -33,6 +55,25 @@ function CalculatorInner() {
       params.set("rate", String(v.hourlyRate));
       if (isEmbed) params.set("embed", "true");
       router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, isEmbed],
+  );
+
+  const applyPreset = useCallback(
+    (key: PresetKey) => {
+      const p = PRESETS[key];
+      const params = new URLSearchParams();
+      params.set("preset", key);
+      params.set("wa", String(p.wa));
+      params.set("ea", String(p.ea));
+      params.set("es", String(p.es));
+      params.set("ar", String(p.ar));
+      params.set("calls", String(p.calls));
+      params.set("mpr", String(p.mpr));
+      params.set("rate", String(p.rate));
+      if (isEmbed) params.set("embed", "true");
+      router.replace(`?${params.toString()}`, { scroll: false });
+      setResetKey((k) => k + 1);
     },
     [router, isEmbed],
   );
@@ -59,7 +100,38 @@ function CalculatorInner() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 800 }}>
+        {!isEmbed && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 10,
+              marginBottom: 16,
+            }}
+          >
+            {(Object.keys(PRESETS) as PresetKey[]).map((key) => (
+              <button
+                key={key}
+                onClick={() => applyPreset(key)}
+                style={{
+                  background: activePreset === key ? "#1a1a3e" : "transparent",
+                  border: `1px solid ${activePreset === key ? "#9b9be0" : "#4a4a6e"}`,
+                  borderRadius: 6,
+                  padding: "6px 14px",
+                  color: "#9b9be0",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {PRESETS[key].label}
+              </button>
+            ))}
+          </div>
+        )}
         <ReviewCostCalculator
+          key={resetKey}
           defaultPctWa={initWa}
           defaultPctEa={initEa}
           defaultPctEs={initEs}
