@@ -1,5 +1,6 @@
 import type { AccentGroupData, ModelScorecardData, SilentFailureRisk, DeploymentGuardCallout, ProbeOverview, KnownBehavior } from "../types/cqs";
 import AccentBreakdownTable from "../components/AccentBreakdownTable";
+import CqsRecommendations from "../components/CqsRecommendations";
 import ModelScorecard from "../components/ModelScorecard";
 import SilentFailureRiskBadge from "../components/SilentFailureRiskBadge";
 import DeploymentGuardCalloutCard from "../components/DeploymentGuardCallout";
@@ -115,6 +116,7 @@ export default async function EvalReportPage({
         <EastAsianDeploymentGuidanceCard guidance={eastAsianGuidance} />
         <KnownBehaviorsCard behaviors={knownBehaviors} />
         <AccentBreakdownTable data={accentData} />
+        <CqsRecommendations data={accentData} />
       </div>
     </div>
   );

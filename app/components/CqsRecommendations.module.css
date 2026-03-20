@@ -1,0 +1,53 @@
+.container {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.title {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+  letter-spacing: 0.02em;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e5e7eb;
+}
+
+.moderate {
+  composes: item;
+  background: rgba(251, 191, 36, 0.08);
+  border-left: 3px solid #f59e0b;
+}
+
+.low {
+  composes: item;
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+}
+
+.accent {
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.mono {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", monospace;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
