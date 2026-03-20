@@ -1,0 +1,90 @@
+.container {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f9fafb;
+  margin: 0 0 1rem;
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.panel {
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.panelHigh {
+  composes: panel;
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid #10b981;
+}
+
+.panelLow {
+  composes: panel;
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.panelAccent {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.iconPass {
+  composes: icon;
+  color: #10b981;
+}
+
+.iconFail {
+  composes: icon;
+  color: #ef4444;
+}
+
+.stat {
+  font-size: 0.8125rem;
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+.mono {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.narrative {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: #d1d5db;
+  line-height: 1.5;
+  text-align: center;
+  font-style: italic;
+}

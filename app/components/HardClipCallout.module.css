@@ -48,6 +48,13 @@
   font-size: 0.8125rem;
 }
 
+.subtitle {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  margin: -0.5rem 0 1rem;
+  line-height: 1.4;
+}
+
 .warning {
   font-size: 0.8125rem;
   color: #d1d5db;
@@ -56,4 +63,15 @@
   background: rgba(239, 68, 68, 0.08);
   border-radius: 8px;
   border-left: 3px solid #ef4444;
+}
+
+.contrast {
+  font-size: 0.8125rem;
+  color: #d1d5db;
+  line-height: 1.5;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(16, 185, 129, 0.06);
+  border-radius: 8px;
+  border-left: 3px solid #10b981;
 }

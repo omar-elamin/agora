@@ -9,6 +9,9 @@ export default function HardClipCallout() {
   return (
     <div className={styles.container}>
       <h3 className={styles.title}>Hard Clip Detection — Routing Failures</h3>
+      <p className={styles.subtitle}>
+        From the Spanish (n=50) Low CQS group — confidence scores cannot be trusted for routing.
+      </p>
       <table className={styles.table}>
         <thead>
           <tr>
@@ -31,6 +34,10 @@ export default function HardClipCallout() {
         These clips received moderate confidence scores (0.56–0.59) but produced
         zero-accuracy transcripts. Confidence-based routing would have sent these
         to automation — Agora catches them.
+      </div>
+      <div className={styles.contrast}>
+        Hindi callers at similar confidence levels (0.55–0.75) maintain 94%+
+        accuracy. Spanish n=50 drops to 0%.
       </div>
     </div>
   );

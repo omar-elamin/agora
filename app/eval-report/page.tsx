@@ -13,6 +13,7 @@ import styles from "./page.module.css";
 
 import ReviewCostCalculator from "../components/ReviewCostCalculator";
 import HardClipCallout from "../components/HardClipCallout";
+import CqsContrastCard from "../components/CqsContrastCard";
 
 const FALLBACK_ACCENT_DATA: AccentGroupData[] = [
   { accent: "East Asian", wer: 6.2, ece: 0.024, cqs: "high", clips: 847 },
@@ -122,6 +123,7 @@ export default async function EvalReportPage({
         <AccentBreakdownTable data={accentData} />
         <CqsRecommendations data={accentData} />
         <HardClipCallout />
+        <CqsContrastCard />
       </div>
     </div>
   );
