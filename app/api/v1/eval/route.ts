@@ -7,6 +7,13 @@ import { corsJson, corsOptions } from "@/lib/cors";
 import { detectRoutingFailure } from "@/lib/whisper-routing-detector";
 import type { WhisperVerboseOutput } from "@/lib/whisper-routing-detector";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
+import { runCalibration } from "@/lib/calibration";
+import type {
+  PredictionRecord,
+  CalibrationResult,
+  FDSResult,
+  TrustScoreResult,
+} from "@/lib/calibration-types";
 import crypto from "crypto";
 
 const SUPPORTED_VENDORS = ["deepgram", "whisper-large-v3"] as const;
@@ -162,6 +169,63 @@ export async function POST(req: NextRequest) {
     rank: ranked.findIndex((rr) => rr.vendor === r.vendor) + 1 || null,
   }));
 
+  // --- Calibration pipeline ---
+  const today = new Date().toISOString().slice(0, 10);
+  const eval_id_cal = crypto.randomUUID();
+
+  // Build PredictionRecords for vendors that have a transcript and ground_truth
+  const allPredictions: Record<string, PredictionRecord[]> = {};
+  if (ground_truth) {
+    for (const r of rankedResults) {
+      if (r.transcript) {
+        const pred: PredictionRecord = {
+          example_id: eval_id_cal,
+          vendor_id: r.vendor,
+          predicted_label: r.transcript.trim(),
+          ground_truth_label: ground_truth,
+          confidence: 1.0,
+          full_probs: null,
+          task_category: "asr",
+          eval_date: today,
+          confidence_available: false,
+        };
+        allPredictions[r.vendor] = [pred];
+      }
+    }
+  }
+
+  // Run calibration per vendor, attach results
+  const calibratedResults = rankedResults.map((r) => {
+    let calibration_result: CalibrationResult | null = null;
+    let fds_result: FDSResult | null = null;
+    let trust_score_result: TrustScoreResult | null = null;
+    let reliability_diagram_url: string | null = null;
+
+    if (ground_truth && r.transcript && allPredictions[r.vendor]) {
+      try {
+        const report = runCalibration(
+          r.vendor,
+          allPredictions[r.vendor],
+          allPredictions,
+        );
+        calibration_result = report.calibration;
+        fds_result = report.fds;
+        trust_score_result = report.trust_score;
+        reliability_diagram_url = `/calibration-output/vendors/${r.vendor}/calibration/asr/reliability-${today}.svg`;
+      } catch (err) {
+        console.error(`[calibration] ${r.vendor} failed:`, err);
+      }
+    }
+
+    return {
+      ...r,
+      calibration_result,
+      fds_result,
+      trust_score_result,
+      reliability_diagram_url,
+    };
+  });
+
   const bestAccuracy = ranked[0]?.vendor ?? requestedVendors[0];
   const bestSpeed = [...results]
     .filter((r) => r.latency_ms !== null)
@@ -170,7 +234,7 @@ export async function POST(req: NextRequest) {
     .filter((r) => r.cost_usd !== null)
     .sort((a, b) => (a.cost_usd ?? Infinity) - (b.cost_usd ?? Infinity))[0]?.vendor ?? requestedVendors[0];
 
-  const eval_id = crypto.randomUUID();
+  const eval_id = eval_id_cal;
 
   const evalResult = {
     eval_id,
@@ -178,7 +242,7 @@ export async function POST(req: NextRequest) {
     submitted_at,
     completed_at,
     vendors_requested: requestedVendors,
-    results: rankedResults,
+    results: calibratedResults,
     recommendation: {
       best_accuracy: bestAccuracy,
       best_speed: bestSpeed,
