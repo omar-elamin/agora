@@ -43,6 +43,17 @@ export interface ProbeOverview {
   escalate_to_audit: boolean;
 }
 
+export interface KnownBehavior {
+  id: string;
+  vendor: string;
+  severity: "critical" | "warning" | "info";
+  title: string;
+  summary: string;
+  detail: string;
+  affected_params: string[];
+  recommendation: string;
+}
+
 export interface ModelScorecardData {
   model: string;
   evalDate: string;

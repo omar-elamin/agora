@@ -1,10 +1,12 @@
-import type { AccentGroupData, ModelScorecardData, SilentFailureRisk, DeploymentGuardCallout, ProbeOverview } from "../types/cqs";
+import type { AccentGroupData, ModelScorecardData, SilentFailureRisk, DeploymentGuardCallout, ProbeOverview, KnownBehavior } from "../types/cqs";
 import AccentBreakdownTable from "../components/AccentBreakdownTable";
 import ModelScorecard from "../components/ModelScorecard";
 import SilentFailureRiskBadge from "../components/SilentFailureRiskBadge";
 import DeploymentGuardCalloutCard from "../components/DeploymentGuardCallout";
+import KnownBehaviorsCard from "../components/KnownBehaviors";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
 import { computeDeploymentGuards } from "@/lib/deployment-guards";
+import { getKnownBehaviors } from "@/lib/known-behaviors";
 import styles from "./page.module.css";
 
 import ReviewCostCalculator from "../components/ReviewCostCalculator";
@@ -72,6 +74,7 @@ export default async function EvalReportPage({
   });
   let deploymentGuards: DeploymentGuardCallout[] = computeDeploymentGuards("assemblyai", silentFailureRisk);
   let probeOverview: ProbeOverview | null = null;
+  const knownBehaviors: KnownBehavior[] = getKnownBehaviors("assemblyai");
 
   if (evalId) {
     const live = await fetchReportData(evalId);
@@ -105,6 +108,7 @@ export default async function EvalReportPage({
         <SilentFailureRiskBadge risk={silentFailureRisk} probeOverview={probeOverview} />
         <ReviewCostCalculator />
         <DeploymentGuardCalloutCard guards={deploymentGuards} />
+        <KnownBehaviorsCard behaviors={knownBehaviors} />
         <AccentBreakdownTable data={accentData} />
       </div>
     </div>

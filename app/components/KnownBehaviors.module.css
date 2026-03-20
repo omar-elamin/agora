@@ -1,0 +1,139 @@
+.card {
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 1rem 0;
+}
+
+.behaviorItem {
+  background: #12121f;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.behaviorItem:last-child {
+  margin-bottom: 0;
+}
+
+.behaviorHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badgeCritical {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #dc2626;
+  color: #fff;
+}
+
+.badgeWarning {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #d97706;
+  color: #fff;
+}
+
+.badgeInfo {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #2563eb;
+  color: #fff;
+}
+
+.behaviorTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e0e0f0;
+}
+
+.summary {
+  font-size: 0.85rem;
+  color: #a0a0b8;
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+.detail {
+  font-size: 0.8rem;
+  color: #7878a0;
+  margin-top: 0.5rem;
+  padding-left: 0.75rem;
+  line-height: 1.5;
+  border-left: 2px solid #2a2a3e;
+}
+
+.params {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.paramTag {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #2a2a3e;
+  color: #8888bb;
+  font-family: monospace;
+}
+
+.recommendationCritical {
+  font-size: 0.8rem;
+  color: #d0d0e0;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #dc2626;
+  background: rgba(220, 38, 38, 0.06);
+  border-radius: 0 4px 4px 0;
+  line-height: 1.5;
+}
+
+.recommendationWarning {
+  font-size: 0.8rem;
+  color: #d0d0e0;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #d97706;
+  background: rgba(217, 119, 6, 0.06);
+  border-radius: 0 4px 4px 0;
+  line-height: 1.5;
+}
+
+.recommendationInfo {
+  font-size: 0.8rem;
+  color: #d0d0e0;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #2563eb;
+  background: rgba(37, 99, 235, 0.06);
+  border-radius: 0 4px 4px 0;
+  line-height: 1.5;
+}
