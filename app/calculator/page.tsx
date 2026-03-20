@@ -31,9 +31,10 @@ function CalculatorInner() {
       params.set("calls", String(v.callsPerDay));
       params.set("mpr", String(v.minutesPerReview));
       params.set("rate", String(v.hourlyRate));
+      if (isEmbed) params.set("embed", "true");
       router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [router],
+    [router, isEmbed],
   );
 
   const handleCopy = () => {
@@ -44,6 +45,8 @@ function CalculatorInner() {
   };
 
   return (
+    <>
+      {isEmbed && <style>{`nav { display: none !important; }`}</style>}
     <div
       style={{
         ...(isEmbed ? {} : { minHeight: "100vh" }),
@@ -112,6 +115,7 @@ function CalculatorInner() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
