@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: Agora API
+  version: 0.1.0
+  description: AI vendor evaluation platform API
+servers:
+  - url: https://agora.caretta.so
+paths:
+  /api/v1/vendors/{vendor_id}/ood-profile:
+    get:
+      summary: Get OOD robustness profile
+      description: Returns out-of-distribution robustness metrics and PRS contribution for a vendor.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: vendor_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Vendor identifier
+        - name: task_category
+          in: query
+          schema:
+            type: string
+            default: asr
+          description: Task category for evaluation
+        - name: use_case_profile
+          in: query
+          schema:
+            type: string
+            enum: [default, high_stakes, commodity, multi_domain]
+            default: default
+          description: PRS weight profile
+      responses:
+        '200':
+          description: OOD profile with PRS contribution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OODProfileResponse'
+        '400':
+          description: Invalid use_case_profile
+        '401':
+          description: Missing or invalid API key
+        '404':
+          description: No OOD data for vendor
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    OODPerSetResult:
+      type: object
+      properties:
+        set_name:
+          type: string
+        shift_type:
+          type: string
+        n_ood:
+          type: integer
+        n_id:
+          type: integer
+        id_ece:
+          type: number
+        ood_ece:
+          type: number
+        ece_shift:
+          type: number
+        id_accuracy:
+          type: number
+        ood_accuracy:
+          type: number
+        mean_conf_id:
+          type: number
+        mean_conf_ood:
+          type: number
+        cii:
+          type: number
+        auroc:
+          type: number
+    OODProfileResponse:
+      type: object
+      properties:
+        vendor_id:
+          type: string
+        task_category:
+          type: string
+        eval_date:
+          type: string
+        id_ece:
+          type: number
+        id_accuracy:
+          type: number
+        per_set_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OODPerSetResult'
+        aggregates:
+          type: object
+          properties:
+            mean_ece_shift:
+              type: number
+            max_cii:
+              type: number
+            ood_detection_auroc:
+              type: number
+        prs_contribution:
+          type: object
+          properties:
+            score:
+              type: number
+            use_case_profile:
+              type: string
+            weights_applied:
+              type: object
+              properties:
+                trust:
+                  type: number
+                drift:
+                  type: number
+                cii:
+                  type: number
+                auroc:
+                  type: number
+            buyer_display:
+              type: object
+              properties:
+                profile_label:
+                  type: string
