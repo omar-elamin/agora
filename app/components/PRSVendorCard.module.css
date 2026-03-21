@@ -1,0 +1,450 @@
+/* ── Card shell ──────────────────────────────────────── */
+
+.card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.cardCompact {
+  padding: 16px;
+}
+
+/* ── Header row (vendor name + SDR badge) ────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.headerCompact {
+  margin-bottom: 12px;
+}
+
+.vendorName {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+  letter-spacing: 0.02em;
+}
+
+/* ── SDR badge ───────────────────────────────────────── */
+
+.sdrBadge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  height: 26px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid #f87171;
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 14px;
+  white-space: nowrap;
+  cursor: default;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.sdrBadge:hover .sdrTooltip,
+.sdrBadge:focus .sdrTooltip {
+  display: block;
+}
+
+.sdrTooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  max-width: 320px;
+  padding: 10px 14px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+  border-radius: 6px;
+  z-index: 50;
+  white-space: normal;
+}
+
+.sdrTooltip::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  right: 16px;
+  border: 5px solid transparent;
+  border-bottom-color: #1f2937;
+}
+
+.sdrTooltipTitle {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* ── Score block ─────────────────────────────────────── */
+
+.scoreBlock {
+  background: #1a2332;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.scoreBlockCompact {
+  padding: 12px;
+}
+
+.scoreHeading {
+  margin: 0 0 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.scoreNumber {
+  font-size: 56px;
+  font-weight: 700;
+  color: #f9fafb;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreNumberCompact {
+  font-size: 36px;
+}
+
+.scoreDenom {
+  font-size: 20px;
+  color: #6b7280;
+  margin-left: 2px;
+}
+
+.scoreDenomCompact {
+  font-size: 14px;
+}
+
+/* ── Label badge ─────────────────────────────────────── */
+
+.labelBadge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 2px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.labelGreen {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.labelBlue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(147, 197, 253, 0.35);
+}
+
+.labelYellow {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.labelRed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(252, 165, 165, 0.35);
+}
+
+/* ── Trust floor indicator ───────────────────────────── */
+
+.trustFloor {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 8px;
+  text-align: left;
+}
+
+.trustFloorCompact {
+  margin-top: 8px;
+  padding: 6px 10px;
+}
+
+.trustFloorIcon {
+  flex-shrink: 0;
+  color: #fbbf24;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.trustFloorText {
+  font-size: 12px;
+  color: #fbbf24;
+  line-height: 1.5;
+}
+
+.trustFloorCompactText {
+  font-size: 11px;
+}
+
+.trustFloorTitle {
+  font-weight: 600;
+}
+
+.trustFloorSub {
+  display: block;
+  font-weight: 400;
+  color: #d4a017;
+}
+
+/* ── Missing components note ─────────────────────────── */
+
+.missingNote {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* ── Evaluation pending state ────────────────────────── */
+
+.pendingBlock {
+  background: transparent;
+  border: 1px dashed #374151;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.pendingTitle {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.pendingText {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.pendingSub {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.pendingCta {
+  display: inline-block;
+  background: none;
+  border: none;
+  color: #818cf8;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pendingCta:hover {
+  text-decoration: underline;
+}
+
+/* ── Phase 2 placeholder ─────────────────────────────── */
+
+.selectorPlaceholder {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: rgba(55, 65, 81, 0.3);
+  border: 1px dashed #374151;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #4b5563;
+  text-align: center;
+}
+
+/* ── Section divider ─────────────────────────────────── */
+
+.divider {
+  border: none;
+  border-top: 1px solid #1f2937;
+  margin: 16px 0;
+}
+
+.dividerCompact {
+  margin: 10px 0;
+}
+
+/* ── Component bars section ──────────────────────────── */
+
+.barsHeading {
+  margin: 0 0 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.barsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.barsListCompact {
+  gap: 6px;
+}
+
+/* ── Single component bar ────────────────────────────── */
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.barLabel {
+  flex: 0 0 180px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #d1d5db;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barLabelCompact {
+  flex: 0 0 72px;
+  font-size: 11px;
+}
+
+.barTrack {
+  flex: 1;
+  min-width: 100px;
+  height: 8px;
+  background: #1f2937;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 250ms ease-out;
+}
+
+.barFillIndigo { background: #818cf8; }
+.barFillTeal { background: #2dd4bf; }
+.barFillViolet { background: #a78bfa; }
+.barFillOrange { background: #fb923c; }
+.barFillRed { background: #f87171; }
+.barFillAmber { background: #fbbf24; }
+
+.barValue {
+  flex: 0 0 40px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #f9fafb;
+}
+
+.barValueNa {
+  color: #6b7280;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.barValueCompact {
+  flex: 0 0 34px;
+  font-size: 11px;
+}
+
+/* ── Tooltip trigger ([?]) ───────────────────────────── */
+
+.tipTrigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: default;
+  outline: none;
+  border-radius: 50%;
+}
+
+.tipTrigger:hover,
+.tipTrigger:focus {
+  color: #9ca3af;
+  background: rgba(156, 163, 175, 0.12);
+}
+
+.tipTrigger:hover .tipText,
+.tipTrigger:focus .tipText {
+  display: block;
+}
+
+.tipText {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 280px;
+  padding: 8px 12px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  border-radius: 6px;
+  z-index: 50;
+  pointer-events: none;
+  white-space: normal;
+}
+
+.tipText::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1f2937;
+}
+
+/* ── Responsive: small screens ───────────────────────── */
+
+@media (max-width: 639px) {
+  .barLabel {
+    flex: 0 0 120px;
+    max-width: 120px;
+  }
+}
