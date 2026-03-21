@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install Python dependencies
+RUN pip install --no-cache-dir datasets
+
+# Set cache location before downloading
+ENV HF_DATASETS_CACHE=/app/.cache/huggingface/datasets
+
+# Pre-download DynaSent R1 + R2 into the image cache
+COPY scripts/warm_dynasent_cache.py scripts/warm_dynasent_cache.py
+RUN python scripts/warm_dynasent_cache.py
+
+# Copy the eval package
+COPY agora/ agora/
+
+# Lock out network access for datasets at runtime
+ENV HF_DATASETS_OFFLINE=1
