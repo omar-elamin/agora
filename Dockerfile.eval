@@ -3,7 +3,8 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install Python dependencies
-RUN pip install --no-cache-dir datasets
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Set cache location before downloading
 ENV HF_DATASETS_CACHE=/app/.cache/huggingface/datasets
@@ -17,3 +18,6 @@ COPY agora/ agora/
 
 # Lock out network access for datasets at runtime
 ENV HF_DATASETS_OFFLINE=1
+
+EXPOSE 8100
+CMD ["uvicorn", "agora.server:app", "--host", "0.0.0.0", "--port", "8100"]
