@@ -14,6 +14,7 @@ import styles from "./page.module.css";
 import ReviewCostCalculator from "../components/ReviewCostCalculator";
 import HardClipCallout from "../components/HardClipCallout";
 import CqsContrastCard from "../components/CqsContrastCard";
+import SentimentOodCard from "../components/SentimentOodCard";
 
 const FALLBACK_ACCENT_DATA: AccentGroupData[] = [
   { accent: "East Asian", wer: 6.2, ece: 0.024, cqs: "high", clips: 847 },
@@ -124,6 +125,7 @@ export default async function EvalReportPage({
         <CqsRecommendations data={accentData} />
         <HardClipCallout />
         <CqsContrastCard />
+        <SentimentOodCard result={{ id_accuracy: 0.8172, ood_accuracy: 0.7083, degradation_delta: 0.1089, degradation_tier: "significant", id_n: 3600, ood_n: 720 }} />
       </div>
     </div>
   );
