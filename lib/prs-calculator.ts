@@ -1,18 +1,50 @@
 /**
  * Production Readiness Score (PRS) Calculator
  *
- * PRS = 100 × (0.30 × trust_score_id + 0.30 × drift_stability + 0.20 × conf_integrity + 0.20 × ood_auroc)
+ * PRS = 100 × (W_TRUST × trust_score_id + W_DRIFT × drift_stability + W_CII × conf_integrity + W_AUROC × ood_auroc)
+ * Weights are determined by the selected use-case profile.
  */
 
-const W_TRUST = 0.30;
-const W_DRIFT = 0.30;
-const W_CII = 0.20;
-const W_AUROC = 0.20;
+import kv from '@/lib/kv';
 
-// Validate weights sum to 1.0
-const weightSum = W_TRUST + W_DRIFT + W_CII + W_AUROC;
-if (Math.abs(weightSum - 1.0) > 1e-9) {
-  throw new Error(`PRS weights must sum to 1.0, got ${weightSum}`);
+export type UseCaseProfile = 'default' | 'high_stakes' | 'commodity' | 'multi_domain';
+
+export const PRS_WEIGHT_PROFILES: Record<UseCaseProfile, {
+  trust: number;
+  drift: number;
+  cii: number;
+  auroc: number;
+  label: string;
+  description: string;
+}> = {
+  default: {
+    trust: 0.30, drift: 0.25, cii: 0.25, auroc: 0.20,
+    label: 'General (Default)',
+    description: 'Balanced weighting across all four dimensions.',
+  },
+  high_stakes: {
+    trust: 0.40, drift: 0.25, cii: 0.25, auroc: 0.10,
+    label: 'High-Stakes',
+    description: 'Prioritizes baseline calibration quality and confidence integrity. For medical, legal, financial deployments.',
+  },
+  commodity: {
+    trust: 0.25, drift: 0.30, cii: 0.20, auroc: 0.25,
+    label: 'Commodity & Volume',
+    description: 'Emphasizes drift stability and OOD detection. For high-throughput classification at scale.',
+  },
+  multi_domain: {
+    trust: 0.25, drift: 0.35, cii: 0.20, auroc: 0.20,
+    label: 'Multi-Domain & Global',
+    description: 'Heaviest weighting on drift stability. For multilingual, cross-domain, international deployments.',
+  },
+};
+
+// Validate all profiles sum to 1.0 at module load
+for (const [name, w] of Object.entries(PRS_WEIGHT_PROFILES)) {
+  const sum = w.trust + w.drift + w.cii + w.auroc;
+  if (Math.abs(sum - 1.0) > 1e-9) {
+    throw new Error(`PRS weights for profile '${name}' must sum to 1.0, got ${sum}`);
+  }
 }
 
 export interface PRSInput {
@@ -22,6 +54,7 @@ export interface PRSInput {
   mean_ece_shift?: number;
   max_cii?: number;
   ood_detection_auroc?: number;
+  use_case_profile?: UseCaseProfile;
 }
 
 export interface PRSResult {
@@ -35,6 +68,8 @@ export interface PRSResult {
   cii_norm: number;
   prs_raw: number;
   prs_final: number;
+  use_case_profile: UseCaseProfile;
+  weights_applied: { trust: number; drift: number; cii: number; auroc: number };
   soft_cap_applied: boolean;
   label_computed: string;
   override_triggered: boolean;
@@ -47,6 +82,7 @@ export interface PRSResult {
   buyer_display: {
     score: number;
     label: string;
+    profile_label: string;
     caveat: string | null;
     silent_drift_warning: string | null;
     component_bars: {
@@ -71,6 +107,14 @@ function round1(n: number): number {
 
 export function computePRS(input: PRSInput): PRSResult {
   const { vendor_id, eval_date, trust_score_id } = input;
+
+  // Resolve weight profile
+  const profile = input.use_case_profile ?? 'default';
+  const weights = PRS_WEIGHT_PROFILES[profile];
+  const W_TRUST = weights.trust;
+  const W_DRIFT = weights.drift;
+  const W_CII = weights.cii;
+  const W_AUROC = weights.auroc;
 
   // OOD fallback
   const ood_data_missing =
@@ -127,6 +171,8 @@ export function computePRS(input: PRSInput): PRSResult {
     ood_detection_auroc,
     ece_shift_norm,
     cii_norm,
+    use_case_profile: profile,
+    weights_applied: { trust: W_TRUST, drift: W_DRIFT, cii: W_CII, auroc: W_AUROC },
     prs_raw,
     prs_final,
     soft_cap_applied,
@@ -141,6 +187,7 @@ export function computePRS(input: PRSInput): PRSResult {
     buyer_display: {
       score: prs_final,
       label: label_displayed,
+      profile_label: weights.label,
       caveat: buyer_caveat,
       silent_drift_warning,
       component_bars: {
@@ -150,5 +197,19 @@ export function computePRS(input: PRSInput): PRSResult {
         ood_detection: ood_detection_auroc,
       },
     },
+  };
+}
+
+export async function fetchOODFromKV(
+  vendor_id: string,
+  task_category: string,
+): Promise<{ mean_ece_shift: number | undefined; max_cii: number | undefined; ood_detection_auroc: number | undefined }> {
+  const key = `ood:${vendor_id}:${task_category}:latest`;
+  const stored = await kv.get(key) as Record<string, unknown> | null;
+  if (!stored) return { mean_ece_shift: undefined, max_cii: undefined, ood_detection_auroc: undefined };
+  return {
+    mean_ece_shift: typeof stored.mean_ece_shift === 'number' ? stored.mean_ece_shift : undefined,
+    max_cii: typeof stored.max_cii === 'number' ? stored.max_cii : undefined,
+    ood_detection_auroc: typeof stored.ood_detection_auroc === 'number' ? stored.ood_detection_auroc : undefined,
   };
 }

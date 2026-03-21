@@ -17,8 +17,8 @@ import type {
 } from "@/lib/calibration-types";
 import { ProbeService } from "@/lib/probe-service";
 import type { ValidationProbeResult } from "@/lib/probe-service";
-import { computePRS } from "@/lib/prs-calculator";
-import type { PRSResult } from "@/lib/prs-calculator";
+import { computePRS, PRS_WEIGHT_PROFILES, fetchOODFromKV } from "@/lib/prs-calculator";
+import type { PRSResult, UseCaseProfile } from "@/lib/prs-calculator";
 import crypto from "crypto";
 
 const probeService = new ProbeService();
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { audio_url, ground_truth, vendors, ood } = body as {
+  const { audio_url, ground_truth, vendors, ood, use_case_profile } = body as {
     audio_url: string;
     ground_truth?: string;
     vendors?: string[];
@@ -71,7 +71,16 @@ export async function POST(req: NextRequest) {
       max_cii?: number;
       ood_detection_auroc?: number;
     };
+    use_case_profile?: string;
   };
+
+  const VALID_PROFILES = Object.keys(PRS_WEIGHT_PROFILES);
+  if (use_case_profile !== undefined && !VALID_PROFILES.includes(use_case_profile)) {
+    return corsJson(
+      { error: `Invalid use_case_profile '${use_case_profile}'. Valid values: ${VALID_PROFILES.join(', ')}` },
+      { status: 400 },
+    );
+  }
 
   if (!audio_url) {
     return corsJson({ error: "audio_url is required" }, { status: 400 });
@@ -229,7 +238,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Run calibration per vendor, attach results
-  const calibratedResults = rankedResults.map((r) => {
+  const calibratedResults = await Promise.all(rankedResults.map(async (r) => {
     let calibration_result: CalibrationResult | null = null;
     let fds_result: FDSResult | null = null;
     let trust_score_result: TrustScoreResult | null = null;
@@ -251,17 +260,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Compute PRS
+    // Compute PRS with OOD data from KV merged with explicit ood fields
     let prs_result: PRSResult | null = null;
     const trustScoreValue = trust_score_result?.trust_score ?? 0.5;
     try {
+      const kvOOD = await fetchOODFromKV(r.vendor, 'asr');
+      const mergedOOD = {
+        mean_ece_shift: ood?.mean_ece_shift ?? kvOOD.mean_ece_shift,
+        max_cii: ood?.max_cii ?? kvOOD.max_cii,
+        ood_detection_auroc: ood?.ood_detection_auroc ?? kvOOD.ood_detection_auroc,
+      };
+
       prs_result = computePRS({
         vendor_id: r.vendor,
         eval_date: today,
         trust_score_id: trustScoreValue,
-        mean_ece_shift: ood?.mean_ece_shift,
-        max_cii: ood?.max_cii,
-        ood_detection_auroc: ood?.ood_detection_auroc,
+        mean_ece_shift: mergedOOD.mean_ece_shift,
+        max_cii: mergedOOD.max_cii,
+        ood_detection_auroc: mergedOOD.ood_detection_auroc,
+        use_case_profile: use_case_profile as UseCaseProfile | undefined,
       });
     } catch (err) {
       console.error(`[prs] ${r.vendor} failed:`, err);
@@ -275,7 +292,7 @@ export async function POST(req: NextRequest) {
       reliability_diagram_url,
       prs_result,
     };
-  });
+  }));
 
   const bestAccuracy = ranked[0]?.vendor ?? requestedVendors[0];
   const bestSpeed = [...results]
