@@ -17,6 +17,8 @@ import type {
 } from "@/lib/calibration-types";
 import { ProbeService } from "@/lib/probe-service";
 import type { ValidationProbeResult } from "@/lib/probe-service";
+import { computePRS } from "@/lib/prs-calculator";
+import type { PRSResult } from "@/lib/prs-calculator";
 import crypto from "crypto";
 
 const probeService = new ProbeService();
@@ -60,10 +62,15 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { audio_url, ground_truth, vendors } = body as {
+  const { audio_url, ground_truth, vendors, ood } = body as {
     audio_url: string;
     ground_truth?: string;
     vendors?: string[];
+    ood?: {
+      mean_ece_shift?: number;
+      max_cii?: number;
+      ood_detection_auroc?: number;
+    };
   };
 
   if (!audio_url) {
@@ -244,12 +251,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Compute PRS
+    let prs_result: PRSResult | null = null;
+    const trustScoreValue = trust_score_result?.trust_score ?? 0.5;
+    try {
+      prs_result = computePRS({
+        vendor_id: r.vendor,
+        eval_date: today,
+        trust_score_id: trustScoreValue,
+        mean_ece_shift: ood?.mean_ece_shift,
+        max_cii: ood?.max_cii,
+        ood_detection_auroc: ood?.ood_detection_auroc,
+      });
+    } catch (err) {
+      console.error(`[prs] ${r.vendor} failed:`, err);
+    }
+
     return {
       ...r,
       calibration_result,
       fds_result,
       trust_score_result,
       reliability_diagram_url,
+      prs_result,
     };
   });
 
