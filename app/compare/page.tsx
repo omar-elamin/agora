@@ -1,11 +1,13 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense, useMemo } from "react";
+import { useEffect, useState, Suspense, useMemo, useCallback } from "react";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
 import type { SilentFailureRisk } from "@/app/types/cqs";
+import type { UseCaseProfile } from "@/lib/prs-profiles";
 import SilentFailureRiskBadge from "@/app/components/SilentFailureRiskBadge";
 import SfrComparisonGrid from "@/app/components/SfrComparisonGrid";
+import UseCaseSelector from "@/app/components/UseCaseSelector";
 import type { VendorSfrEntry } from "@/app/components/SfrComparisonGrid";
 import styles from "./page.module.css";
 
@@ -91,6 +93,14 @@ function ComparePageInner() {
   const searchParams = useSearchParams();
   const [vendors, setVendors] = useState<VendorData[]>(VENDOR_DEFAULTS);
   const [sortKey, setSortKey] = useState<SortKey>("risk");
+  const [profile, setProfile] = useState<UseCaseProfile>("default");
+  const [toastVisible, setToastVisible] = useState(false);
+
+  const handleProfileChange = useCallback((p: UseCaseProfile) => {
+    setProfile(p);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 1500);
+  }, []);
 
   useEffect(() => {
     const evalIds: Record<string, string> = {};
@@ -172,6 +182,23 @@ function ComparePageInner() {
         </p>
       </header>
 
+      {/* Global PRS profile selector */}
+      <div className={styles.profileSelector}>
+        <UseCaseSelector
+          value={profile}
+          onChange={handleProfileChange}
+        />
+      </div>
+
+      {/* Toast notification */}
+      <div
+        className={`${styles.toast} ${toastVisible ? styles.toastVisible : ""}`}
+        role="status"
+        aria-live="polite"
+      >
+        Rankings updated
+      </div>
+
       <div className={styles.controls}>
         <span className={styles.controlLabel}>Sort by:</span>
         <button
@@ -202,10 +229,10 @@ function ComparePageInner() {
             <SilentFailureRiskBadge risk={v.risk} />
             <div className={styles.metrics}>
               <span className={styles.metric}>
-                WER: {v.wer != null ? `${(v.wer * 100).toFixed(1)}%` : "—"}
+                WER: {v.wer != null ? `${(v.wer * 100).toFixed(1)}%` : "\u2014"}
               </span>
               <span className={styles.metric}>
-                ECE: {v.ece != null ? `${(v.ece * 100).toFixed(1)}%` : "—"}
+                ECE: {v.ece != null ? `${(v.ece * 100).toFixed(1)}%` : "\u2014"}
               </span>
             </div>
           </div>

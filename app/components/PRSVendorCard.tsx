@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo, useId } from "react";
+import { useMemo, useId, useState } from "react";
+import { PRS_WEIGHT_PROFILES } from "@/lib/prs-profiles";
+import type { UseCaseProfile } from "@/lib/prs-profiles";
+import UseCaseSelector from "./UseCaseSelector";
 import styles from "./PRSVendorCard.module.css";
 
 /* ── Types ───────────────────────────────────────────── */
@@ -20,13 +23,14 @@ export interface PRSVendorData {
 
 export interface PRSVendorCardProps {
   vendor: PRSVendorData;
-  initialProfile?: "default" | "high_stakes" | "commodity" | "multi_domain";
+  initialProfile?: UseCaseProfile;
   compact?: boolean;
+  /** Controlled profile (for comparison view). Overrides internal state. */
+  profile?: UseCaseProfile;
+  onProfileChange?: (profile: UseCaseProfile) => void;
 }
 
 /* ── Constants ───────────────────────────────────────── */
-
-const DEFAULT_WEIGHTS = { trust: 0.3, drift: 0.25, cii: 0.25, ood: 0.2 };
 
 const COMPONENT_DEFS = [
   {
@@ -84,15 +88,22 @@ function computeComponentValues(c: PRSComponentScores): Record<CompKey, number |
 function computePRS(
   vals: Record<CompKey, number | null>,
   rawComponents: PRSComponentScores,
+  profileKey: UseCaseProfile,
 ): { score: number | null; available: CompKey[]; missing: string[] } {
-  const weights = DEFAULT_WEIGHTS;
+  const profileWeights = PRS_WEIGHT_PROFILES[profileKey];
+  const weightMap = {
+    trust: profileWeights.trust,
+    drift: profileWeights.drift,
+    cii: profileWeights.cii,
+    ood: profileWeights.auroc,
+  };
   const entries: { key: CompKey; val: number; w: number }[] = [];
   const missing: string[] = [];
 
   for (const def of COMPONENT_DEFS) {
     const v = vals[def.key];
     if (v !== null) {
-      entries.push({ key: def.key, val: v, w: weights[def.key] });
+      entries.push({ key: def.key, val: v, w: weightMap[def.key] });
     } else {
       missing.push(def.label);
     }
@@ -171,19 +182,70 @@ function Tip({ id, text }: { id: string; text: string }) {
 
 export default function PRSVendorCard({
   vendor,
+  initialProfile = "default",
   compact = false,
+  profile: controlledProfile,
+  onProfileChange,
 }: PRSVendorCardProps) {
   const uid = useId();
+  const [internalProfile, setInternalProfile] = useState<UseCaseProfile>(initialProfile);
+
+  // Support controlled + uncontrolled usage
+  const activeProfile = controlledProfile ?? internalProfile;
+  const handleProfileChange = (p: UseCaseProfile) => {
+    if (onProfileChange) onProfileChange(p);
+    else setInternalProfile(p);
+  };
+
   const sdr = isSilentDriftRisk(vendor.components);
   const vals = useMemo(() => computeComponentValues(vendor.components), [vendor.components]);
+
   const { score, missing } = useMemo(
-    () => computePRS(vals, vendor.components),
-    [vals, vendor.components],
+    () => computePRS(vals, vendor.components, activeProfile),
+    [vals, vendor.components, activeProfile],
   );
+
+  // Default score for delta display
+  const defaultScore = useMemo(() => {
+    if (activeProfile === "default") return null;
+    return computePRS(vals, vendor.components, "default").score;
+  }, [vals, vendor.components, activeProfile]);
+
   const trustFloorActive =
     vendor.components.trust_score_ID !== null &&
     vendor.components.trust_score_ID < 0.6;
   const label = score !== null ? getLabelConfig(score) : null;
+
+  /* ── Score delta ─────────────────────────────── */
+  let deltaEl: React.ReactNode = null;
+  if (score !== null && activeProfile !== "default" && defaultScore !== null) {
+    const diff = score - defaultScore;
+    if (diff > 0) {
+      deltaEl = (
+        <span className={styles.scoreDelta} data-direction="up">
+          {"\u2191"} from {defaultScore} (default)
+        </span>
+      );
+    } else if (diff < 0) {
+      deltaEl = (
+        <span className={styles.scoreDelta} data-direction="down">
+          {"\u2193"} from {defaultScore} (default)
+        </span>
+      );
+    } else {
+      deltaEl = (
+        <span className={styles.scoreDelta} data-direction="same">
+          = default
+        </span>
+      );
+    }
+  } else if (score !== null && activeProfile === "default") {
+    deltaEl = (
+      <span className={styles.scoreDelta} data-direction="same">
+        = default
+      </span>
+    );
+  }
 
   /* ── Evaluation pending state ────────────────── */
   if (score === null) {
@@ -245,7 +307,7 @@ export default function PRSVendorCard({
           aria-label={`Production Readiness Score: ${score} out of 100`}
         >
           <span
-            className={`${styles.scoreNumber}${compact ? ` ${styles.scoreNumberCompact}` : ""}`}
+            className={`${styles.scoreNumber} ${styles.scoreAnimated}${compact ? ` ${styles.scoreNumberCompact}` : ""}`}
           >
             {score}
           </span>
@@ -256,6 +318,9 @@ export default function PRSVendorCard({
             / 100
           </span>
         </span>
+
+        {/* Score delta */}
+        {!compact && deltaEl}
 
         {/* Label badge */}
         {label && (
@@ -304,11 +369,12 @@ export default function PRSVendorCard({
         )}
       </div>
 
-      {/* Phase 2 placeholder (full view only) */}
+      {/* Use-case selector (full view only) */}
       {!compact && (
-        <div className={styles.selectorPlaceholder}>
-          Score context selector &mdash; coming soon
-        </div>
+        <UseCaseSelector
+          value={activeProfile}
+          onChange={handleProfileChange}
+        />
       )}
 
       {/* Divider */}

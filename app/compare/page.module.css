@@ -135,3 +135,36 @@
 .backLink:hover {
   text-decoration: underline;
 }
+
+/* ── Global profile selector ─────────────────────────── */
+
+.profileSelector {
+  max-width: 1000px;
+  margin: 0 auto 24px;
+}
+
+/* ── Toast notification ──────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 8px 20px;
+  background: #166534;
+  border: 1px solid #4ade80;
+  color: #f9fafb;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toastVisible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
