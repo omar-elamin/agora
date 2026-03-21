@@ -8,6 +8,8 @@ import { detectRoutingFailure } from "@/lib/whisper-routing-detector";
 import type { WhisperVerboseOutput } from "@/lib/whisper-routing-detector";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
 import { computeDeploymentGuards } from "@/lib/deployment-guards";
+import { evaluateKoreanRouting } from "@/lib/korean-confidence-router";
+import type { KoreanRoutingResult } from "@/lib/korean-confidence-router";
 import { runCalibration } from "@/lib/calibration";
 import type {
   PredictionRecord,
@@ -159,6 +161,15 @@ export async function POST(req: NextRequest) {
         const silent_failure_risk = computeSilentFailureRisk({ vendor, wer, routing_failure, routing_failure_reason });
         const deployment_guards = computeDeploymentGuards(vendor);
 
+        // Korean confidence-based routing (Deepgram only)
+        let korean_routing: KoreanRoutingResult | null = null;
+        if (vendor === "deepgram" && "detected_language" in r.value) {
+          korean_routing = evaluateKoreanRouting(
+            (r.value as { confidence: number | null }).confidence ?? null,
+            (r.value as { detected_language: string | null }).detected_language ?? null
+          );
+        }
+
         // Run language validation probe
         let validation_probe: ValidationProbeResult | null = null;
         let adjusted_confidence: number | null = null;
@@ -175,7 +186,7 @@ export async function POST(req: NextRequest) {
           adjusted_confidence = probeOut.adjusted_confidence;
         }
 
-        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, silent_failure_risk, deployment_guards, validation_probe, adjusted_confidence, primary_confidence: primaryConfidence, error: null };
+        return { vendor, transcript, latency_ms, cost_usd, duration_seconds, wer, routing_failure, routing_failure_reason, silent_failure_risk, deployment_guards, korean_routing, validation_probe, adjusted_confidence, primary_confidence: primaryConfidence, error: null };
       } else {
         return {
           vendor,
@@ -188,6 +199,7 @@ export async function POST(req: NextRequest) {
           routing_failure_reason: null,
           silent_failure_risk: null,
           deployment_guards: [],
+          korean_routing: null,
           validation_probe: null,
           adjusted_confidence: null,
           primary_confidence: null,
