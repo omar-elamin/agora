@@ -128,12 +128,12 @@ export default function Home() {
       >
         <p style={{ color: "#666", margin: "0 0 0.5rem" }}># generate a key</p>
         <pre style={{ margin: "0 0 1rem", color: "#4ade80" }}>
-{`curl -X POST https://your-host/api/v1/keys`}
+{`curl -X POST https://agora-agora-hq.vercel.app/api/v1/keys`}
         </pre>
 
         <p style={{ color: "#666", margin: "0 0 0.5rem" }}># run an eval</p>
         <pre style={{ margin: "0 0 1rem", color: "#4ade80" }}>
-{`curl -X POST https://your-host/api/v1/eval \\
+{`curl -X POST https://agora-agora-hq.vercel.app/api/v1/eval \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_KEY" \\
   -d '{"audio_url": "https://example.com/audio.wav"}'`}
@@ -143,7 +143,7 @@ export default function Home() {
           # get results
         </p>
         <pre style={{ margin: 0, color: "#4ade80" }}>
-{`curl https://your-host/api/v1/eval/EVAL_ID`}
+{`curl https://agora-agora-hq.vercel.app/api/v1/eval/EVAL_ID`}
         </pre>
       </div>
 
