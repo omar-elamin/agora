@@ -83,6 +83,69 @@ class TrustScoreResult:
 
 
 @dataclass
+class TrustScoreIDResult:
+    """New trust_score_id result on [0, 1] scale."""
+    trust_score_id: float
+    trust_label: str
+    ece_norm: float
+    mce_norm: float
+    brier_norm: float
+    fds_norm: float
+    flags: list[str] = field(default_factory=list)
+
+
+@dataclass
+class BrierDecomposition:
+    """Murphy (1973) decomposition of the Brier Score."""
+    uncertainty: float
+    resolution: float
+    reliability: float
+    brier_score: float
+
+
+@dataclass
+class ReliabilityBin:
+    """Single bin entry for reliability diagram data."""
+    bin: int
+    conf_range: list[float]
+    mean_conf: float
+    accuracy: float
+    count: int
+
+
+@dataclass
+class MetricsNormalized:
+    """Normalized metric components for trust_score_id."""
+    ece_norm: float
+    mce_norm: float
+    brier_norm: float
+    fds_norm: float
+
+
+@dataclass
+class CalibrationReportV2:
+    """V2 calibration report matching the new JSON schema."""
+    vendor_id: str
+    task_category: str
+    eval_date: str
+    n_examples: int
+    n_correct: int
+    accuracy: float
+    ece: Optional[float]
+    ece_adaptive: Optional[float]
+    mce: Optional[float]
+    mce_bin_index: Optional[int]
+    brier: Optional[float]
+    fds: Optional[float]
+    metrics_normalized: Optional[MetricsNormalized]
+    trust_score_id: Optional[float]
+    trust_label: str
+    brier_decomposition: Optional[BrierDecomposition] = None
+    flags: list[str] = field(default_factory=list)
+    reliability_diagram: list[ReliabilityBin] = field(default_factory=list)
+
+
+@dataclass
 class VendorCalibrationReport:
     """Complete calibration report for one vendor. Written to storage."""
     vendor_id: str

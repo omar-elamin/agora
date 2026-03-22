@@ -29,7 +29,7 @@ export interface SilentFailureRisk {
 export interface DeploymentGuardCallout {
   vendor: string;
   severity: "required" | "recommended";
-  guard_type: "confidence_floor" | "language_detection" | "threshold_tuning";
+  guard_type: "confidence_floor" | "language_detection" | "threshold_tuning" | "language_code_routing";
   description: string;
   affected_languages: string[];
   threshold?: number;

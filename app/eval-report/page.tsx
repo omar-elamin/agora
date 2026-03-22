@@ -116,6 +116,24 @@ export default async function EvalReportPage({
 
       <div className={styles.grid}>
         <ModelScorecard data={scorecard} />
+        <a
+          href="/reports/demo"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "#6c63ff",
+            color: "white",
+            padding: "10px 20px",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: 600,
+            textDecoration: "none",
+            width: "fit-content",
+          }}
+        >
+          View Temporal OOD Report →
+        </a>
         <SilentFailureRiskBadge risk={silentFailureRisk} probeOverview={probeOverview} />
         <ReviewCostCalculator />
         <DeploymentGuardCalloutCard guards={deploymentGuards} />

@@ -3,7 +3,9 @@ import os
 from dataclasses import asdict
 from typing import Optional
 
-from agora.eval.calibration.ece import compute_ece
+from agora.eval.calibration.brier import compute_brier_score, decompose_brier_score
+from agora.eval.calibration.ece import compute_ece, compute_adaptive_ece
+from agora.eval.calibration.fds_auroc import compute_fds_auroc
 from agora.eval.calibration.fds_probe import compute_fds, _fds_label, _invisible_failure_label
 from agora.eval.calibration.normalize import normalize_predictions
 from agora.eval.calibration.reliability_diagram import (
@@ -11,8 +13,12 @@ from agora.eval.calibration.reliability_diagram import (
     reliability_diagram_path,
 )
 from agora.eval.calibration.trust_score import TrustScoreWeights, compute_trust_score
+from agora.eval.calibration.trust_score_id import compute_trust_score_id
 from agora.eval.calibration.types import (
+    CalibrationReportV2,
+    MetricsNormalized,
     PredictionRecord,
+    ReliabilityBin,
     VendorCalibrationReport,
 )
 
@@ -23,7 +29,7 @@ def run_calibration_pipeline(
     predictions: list[PredictionRecord],
     all_vendor_predictions: dict[str, list[PredictionRecord]],
     output_dir: str,
-    n_bins: int = 15,
+    n_bins: int = 10,
     high_conf_threshold: float = 0.85,
     trust_score_weights: Optional[TrustScoreWeights] = None,
     normalize_first: bool = True,
@@ -31,7 +37,7 @@ def run_calibration_pipeline(
     vendor_config: Optional[dict] = None,
 ) -> VendorCalibrationReport:
     """
-    Run the full Phase 1 calibration pipeline for one vendor.
+    Run the full calibration pipeline for one vendor.
 
     If normalize_first is True and raw_predictions is provided, the raw
     predictions are normalized into PredictionRecords before running
@@ -43,6 +49,21 @@ def run_calibration_pipeline(
     # 1. ECE
     calibration = compute_ece(predictions, n_bins)
 
+    # 1b. Brier Score
+    brier = compute_brier_score(predictions) if predictions else 0.0
+    calibration.brier_score = round(brier, 6)
+
+    # 1b2. Brier decomposition
+    brier_decomp = None
+    if predictions:
+        try:
+            brier_decomp = decompose_brier_score(predictions, n_bins)
+        except ValueError:
+            pass
+
+    # 1c. Adaptive ECE
+    ece_adaptive = compute_adaptive_ece(predictions)
+
     # 2. Reliability diagram
     diagram_dir = os.path.join(
         output_dir, "vendors", vendor_id, "calibration", task_category
@@ -52,7 +73,7 @@ def run_calibration_pipeline(
     diagram_path = os.path.join(diagram_dir, f"reliability-{eval_date}.svg")
     generate_reliability_diagram(calibration, diagram_path)
 
-    # 3. FDS
+    # 3. FDS (probe-based, for backward compat)
     fds_result = None
     if len(all_vendor_predictions) >= 2:
         fds_result = compute_fds(
@@ -62,7 +83,10 @@ def run_calibration_pipeline(
             high_conf_threshold=high_conf_threshold,
         )
 
-    # 4. Trust Score
+    # 3b. FDS via AUROC
+    fds_auroc_result = compute_fds_auroc(predictions) if predictions else None
+
+    # 4. Trust Score (old, for backward compat)
     n_correct = sum(
         1 for p in predictions
         if p.predicted_label == p.ground_truth_label
@@ -79,7 +103,77 @@ def run_calibration_pipeline(
         weights=trust_score_weights,
     )
 
-    # 5. Assemble report
+    # 5. trust_score_id (new formula)
+    n_incorrect = len(predictions) - n_correct
+    # Detect number of classes
+    unique_labels = set()
+    for p in predictions:
+        unique_labels.add(p.ground_truth_label)
+        unique_labels.add(p.predicted_label)
+    n_classes = max(len(unique_labels), 2)
+
+    fds_for_trust_id = fds_auroc_result.fds if fds_auroc_result else 0.5
+    ece_val = calibration.ece if calibration.ece is not None else 0.0
+    mce_val = calibration.mce if calibration.mce is not None else 0.0
+
+    trust_id_result = compute_trust_score_id(
+        ece=ece_val,
+        mce=mce_val,
+        brier=brier,
+        fds=fds_for_trust_id,
+        n_classes=n_classes,
+        ece_adaptive=ece_adaptive,
+        bin_stats=calibration.bins,
+        n_incorrect=n_incorrect,
+    )
+
+    # 6. Build V2 report
+    mce_bin_index = None
+    if calibration.bins and calibration.mce is not None:
+        populated = [b for b in calibration.bins if b.count > 0]
+        if populated:
+            mce_bin = max(populated, key=lambda b: b.gap)
+            mce_bin_index = mce_bin.bin_index
+
+    reliability_diagram_data = [
+        ReliabilityBin(
+            bin=b.bin_index + 1,
+            conf_range=[round(b.lower, 4), round(b.upper, 4)],
+            mean_conf=round(b.mean_conf, 4),
+            accuracy=round(b.accuracy, 4),
+            count=b.count,
+        )
+        for b in calibration.bins
+        if b.count > 0
+    ]
+
+    v2_report = CalibrationReportV2(
+        vendor_id=vendor_id,
+        task_category=task_category,
+        eval_date=eval_date,
+        n_examples=len(predictions),
+        n_correct=n_correct,
+        accuracy=round(accuracy, 6),
+        ece=calibration.ece,
+        ece_adaptive=ece_adaptive,
+        mce=calibration.mce,
+        mce_bin_index=mce_bin_index,
+        brier=calibration.brier_score,
+        fds=fds_for_trust_id,
+        metrics_normalized=MetricsNormalized(
+            ece_norm=trust_id_result.ece_norm,
+            mce_norm=trust_id_result.mce_norm,
+            brier_norm=trust_id_result.brier_norm,
+            fds_norm=trust_id_result.fds_norm,
+        ),
+        trust_score_id=trust_id_result.trust_score_id,
+        trust_label=trust_id_result.trust_label,
+        brier_decomposition=brier_decomp,
+        flags=trust_id_result.flags,
+        reliability_diagram=reliability_diagram_data,
+    )
+
+    # 7. Assemble legacy report
     report = VendorCalibrationReport(
         vendor_id=vendor_id,
         task_category=task_category,
@@ -88,10 +182,17 @@ def run_calibration_pipeline(
         fds=fds_result,
         trust_score=trust_result,
         reliability_diagram_path=diagram_path,
+        metadata={
+            "trust_score_id": trust_id_result.trust_score_id,
+            "trust_label": trust_id_result.trust_label,
+            "fds_auroc": fds_for_trust_id,
+            "ece_adaptive": ece_adaptive,
+        },
     )
 
-    # 6. Write to storage
+    # 8. Write to storage
     _write_results(report, output_dir)
+    _write_v2_report(v2_report, output_dir)
 
     return report
 
@@ -178,6 +279,9 @@ def _build_comparison_table(
             "fds_high_confidence": fds.fds_high_confidence if fds else None,
             "invisible_failure_rate": fds.invisible_failure_rate if fds else None,
             "trust_score": ts.trust_score if ts else None,
+            "trust_score_id": report.metadata.get("trust_score_id"),
+            "trust_label": report.metadata.get("trust_label"),
+            "fds_auroc": report.metadata.get("fds_auroc"),
             "calibration_label": cal.label,
             "fds_label": fds_label_text,
             "invisible_label": inv_label_text,
@@ -276,4 +380,17 @@ def _write_results(report: VendorCalibrationReport, output_dir: str) -> None:
 
     # Full report
     with open(os.path.join(base, f"report-{date}.json"), "w") as f:
+        json.dump(asdict(report), f, indent=2)
+
+
+def _write_v2_report(report: CalibrationReportV2, output_dir: str) -> None:
+    """Write the V2 calibration report JSON."""
+    base = os.path.join(
+        output_dir, "vendors", report.vendor_id,
+        "calibration", report.task_category,
+    )
+    os.makedirs(base, exist_ok=True)
+    date = report.eval_date
+
+    with open(os.path.join(base, f"calibration-report-v2-{date}.json"), "w") as f:
         json.dump(asdict(report), f, indent=2)

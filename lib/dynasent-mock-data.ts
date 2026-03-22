@@ -36,9 +36,14 @@ function entry(idAcc: number, oodAcc: number): DynaSentResult {
 const MOCK_DATA = new Map<string, DynaSentResult>([
   ["openai/gpt-4o-mini", entry(0.782, 0.691)],
   ["openai/gpt-4o", entry(0.913, 0.842)],
+  ["openai/gpt-4-turbo", entry(0.901, 0.836)],
   ["anthropic/claude-3-haiku-20240307", entry(0.801, 0.734)],
   ["anthropic/claude-3.5-sonnet-20241022", entry(0.927, 0.889)],
   ["google/gemini-1.5-flash", entry(0.817, 0.709)],
+  ["google/gemini-1.5-pro", entry(0.919, 0.867)],
+  ["meta-llama/llama-3.1-70b-instruct", entry(0.865, 0.791)],
+  ["mistralai/mistral-large", entry(0.891, 0.831)],
+  ["cohere/command-r-plus", entry(0.878, 0.812)],
 ]);
 
 function normalizeKey(vendor: string, endpoint: string): string {

@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: "Compare", href: "/compare" },
   { label: "Eval Report", href: "/eval-report" },
   { label: "Calculator", href: "/calculator" },
+  { label: "Docs", href: "/docs/integrations" },
 ];
 
 export default function NavHeader() {
@@ -39,7 +40,7 @@ export default function NavHeader() {
         Agora
       </span>
       {NAV_ITEMS.map(({ label, href }) => {
-        const isActive = pathname === href;
+        const isActive = pathname === href || pathname.startsWith(href + "/");
         return (
           <Link
             key={href}

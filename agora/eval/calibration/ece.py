@@ -5,8 +5,9 @@ from agora.eval.calibration.types import BinStats, CalibrationResult, Prediction
 
 def compute_ece(
     predictions: list[PredictionRecord],
-    n_bins: int = 15,
+    n_bins: int = 10,
     strategy: str = "equal_width",
+    min_bin_population: int = 20,
 ) -> CalibrationResult:
     """
     Compute Expected Calibration Error for a set of predictions from one vendor.
@@ -74,7 +75,15 @@ def compute_ece(
 
     n_total = len(available)
 
-    if non_empty_stats:
+    # Filter bins below minimum population for ECE/MCE calculation
+    qualifying_stats = [s for s in non_empty_stats if s.count >= min_bin_population]
+
+    if qualifying_stats:
+        qualifying_total = sum(s.count for s in qualifying_stats)
+        ece = sum((s.count / qualifying_total) * s.gap for s in qualifying_stats)
+        mce = max(s.gap for s in qualifying_stats)
+    elif non_empty_stats:
+        # Fall back to all non-empty if no bins meet min_population
         ece = sum((s.count / n_total) * s.gap for s in non_empty_stats)
         mce = max(s.gap for s in non_empty_stats)
     else:
@@ -164,6 +173,54 @@ def _compute_bin_stats(
         accuracy=accuracy,
         gap=gap,
     )
+
+
+def compute_adaptive_ece(
+    predictions: list[PredictionRecord],
+    n_bins: int = 15,
+) -> Optional[float]:
+    """
+    Compute adaptive ECE using equal-frequency (quantile) binning.
+
+    Each bin gets approximately the same number of predictions.
+    Returns None if no predictions have confidence available.
+    """
+    available = [p for p in predictions if p.confidence_available]
+    if not available:
+        return None
+
+    # Sort by confidence
+    sorted_preds = sorted(available, key=lambda p: p.confidence)
+    n_total = len(sorted_preds)
+
+    # Split into n_bins equal-frequency bins
+    bin_size = n_total // n_bins
+    remainder = n_total % n_bins
+
+    bins: list[list[PredictionRecord]] = []
+    start = 0
+    for i in range(n_bins):
+        # Distribute remainder across first bins
+        end = start + bin_size + (1 if i < remainder else 0)
+        if start < n_total:
+            bins.append(sorted_preds[start:end])
+        start = end
+
+    # Compute ECE across bins
+    ece = 0.0
+    for bin_preds in bins:
+        if not bin_preds:
+            continue
+        count = len(bin_preds)
+        mean_conf = sum(p.confidence for p in bin_preds) / count
+        n_correct = sum(
+            1 for p in bin_preds if p.predicted_label == p.ground_truth_label
+        )
+        accuracy = n_correct / count
+        gap = abs(accuracy - mean_conf)
+        ece += (count / n_total) * gap
+
+    return round(ece, 6)
 
 
 def _calibration_label(ece: float) -> tuple[str, str]:

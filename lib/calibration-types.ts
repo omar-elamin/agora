@@ -67,6 +67,59 @@ export interface TrustScoreResult {
   label: string;
 }
 
+export interface TrustScoreIDResult {
+  trust_score_id: number;
+  trust_label: string;
+  ece_norm: number;
+  mce_norm: number;
+  brier_norm: number;
+  fds_norm: number;
+  flags: string[];
+}
+
+export interface ReliabilityBin {
+  bin: number;
+  conf_range: [number, number];
+  mean_conf: number;
+  accuracy: number;
+  count: number;
+}
+
+export interface MetricsNormalized {
+  ece_norm: number;
+  mce_norm: number;
+  brier_norm: number;
+  fds_norm: number;
+}
+
+export interface CalibrationReportV2 {
+  vendor_id: string;
+  task_category: string;
+  eval_date: string;
+  n_examples: number;
+  n_correct: number;
+  accuracy: number;
+  ece: number | null;
+  ece_adaptive: number | null;
+  mce: number | null;
+  mce_bin_index: number | null;
+  brier: number | null;
+  fds: number | null;
+  metrics_normalized: MetricsNormalized | null;
+  trust_score_id: number | null;
+  trust_label: string;
+  flags: string[];
+  reliability_diagram: ReliabilityBin[];
+}
+
+export interface FDSAUROCResult {
+  fds: number;
+  n_correct: number;
+  n_errors: number;
+  n_total: number;
+  insufficient_errors: boolean;
+}
+
 export interface VendorCalibrationReport {
   vendor_id: string;
   task_category: string;

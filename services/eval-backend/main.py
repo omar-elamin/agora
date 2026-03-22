@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 import asyncio
 import hashlib
 import json
@@ -171,36 +172,8 @@ async def _evaluate_split(
 
 
 # ---------------------------------------------------------------------------
-# SQLite result cache
+# Cache backend abstraction
 # ---------------------------------------------------------------------------
-def _init_cache_db() -> None:
-    """Create the cache table if it doesn't exist."""
-    with _cache_conn() as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS eval_cache (
-                cache_key   TEXT PRIMARY KEY,
-                model_vendor    TEXT NOT NULL,
-                model_endpoint  TEXT NOT NULL,
-                created_at  TEXT NOT NULL,
-                result_json TEXT NOT NULL
-            )
-            """
-        )
-
-
-@contextmanager
-def _cache_conn():
-    """Yield a sqlite3 connection with WAL mode for concurrent reads."""
-    conn = sqlite3.connect(EVAL_CACHE_PATH)
-    conn.execute("PRAGMA journal_mode=WAL")
-    try:
-        yield conn
-        conn.commit()
-    finally:
-        conn.close()
-
-
 def _make_cache_key(model_vendor: str, model_endpoint: str, config: dict | None, sample_size: int) -> str:
     """SHA-256 of the deterministic request parameters."""
     payload = json.dumps(
@@ -215,36 +188,139 @@ def _make_cache_key(model_vendor: str, model_endpoint: str, config: dict | None,
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def _cache_get(key: str) -> dict | None:
-    """Return cached result dict if present and not expired, else None."""
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=EVAL_CACHE_TTL_DAYS)).isoformat()
-    with _cache_conn() as conn:
-        row = conn.execute(
-            "SELECT result_json FROM eval_cache WHERE cache_key = ? AND created_at > ?",
-            (key, cutoff),
-        ).fetchone()
-    if row:
-        return json.loads(row[0])
-    return None
+class CacheBackend(abc.ABC):
+    @abc.abstractmethod
+    def init(self) -> None:
+        """Initialise the cache (create tables, connections, etc.)."""
+
+    @abc.abstractmethod
+    def get(self, key: str) -> Optional[dict]:
+        """Return cached result dict if present and not expired, else None."""
+
+    @abc.abstractmethod
+    def set(self, key: str, value: dict, ttl_days: int) -> None:
+        """Store *value* under *key* with the given TTL."""
+
+    @abc.abstractmethod
+    def clear(self) -> int:
+        """Delete all entries. Returns number of rows deleted."""
 
 
-def _cache_put(key: str, model_vendor: str, model_endpoint: str, result: dict) -> None:
-    """Insert or replace a cache entry."""
-    with _cache_conn() as conn:
-        conn.execute(
-            """
-            INSERT OR REPLACE INTO eval_cache (cache_key, model_vendor, model_endpoint, created_at, result_json)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (key, model_vendor, model_endpoint, datetime.now(timezone.utc).isoformat(), json.dumps(result)),
+class SQLiteCache(CacheBackend):
+    def __init__(self, path: str) -> None:
+        self._path = path
+
+    @contextmanager
+    def _conn(self):
+        conn = sqlite3.connect(self._path)
+        conn.execute("PRAGMA journal_mode=WAL")
+        try:
+            yield conn
+            conn.commit()
+        finally:
+            conn.close()
+
+    def init(self) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS eval_cache (
+                    cache_key   TEXT PRIMARY KEY,
+                    created_at  TEXT NOT NULL,
+                    result_json TEXT NOT NULL
+                )
+                """
+            )
+
+    def get(self, key: str) -> Optional[dict]:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=EVAL_CACHE_TTL_DAYS)).isoformat()
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT result_json FROM eval_cache WHERE cache_key = ? AND created_at > ?",
+                (key, cutoff),
+            ).fetchone()
+        if row:
+            return json.loads(row[0])
+        return None
+
+    def set(self, key: str, value: dict, ttl_days: int) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO eval_cache (cache_key, created_at, result_json)
+                VALUES (?, ?, ?)
+                """,
+                (key, datetime.now(timezone.utc).isoformat(), json.dumps(value)),
+            )
+
+    def clear(self) -> int:
+        with self._conn() as conn:
+            cur = conn.execute("DELETE FROM eval_cache")
+            return cur.rowcount
+
+
+class RedisCache(CacheBackend):
+    def __init__(self, url: str) -> None:
+        try:
+            import redis.asyncio as aioredis
+        except ImportError:
+            raise ImportError(
+                "redis package is required for the Redis cache backend. "
+                "Install it with: pip install 'redis>=4.0'"
+            )
+        self._url = url
+        self._redis: aioredis.Redis | None = None
+        self._aioredis = aioredis
+
+    def init(self) -> None:
+        self._redis = self._aioredis.from_url(self._url, decode_responses=True)
+
+    async def _async_get(self, key: str) -> Optional[dict]:
+        assert self._redis is not None
+        raw = await self._redis.get(f"eval:{key}")
+        if raw is not None:
+            return json.loads(raw)
+        return None
+
+    def get(self, key: str) -> Optional[dict]:
+        return asyncio.get_event_loop().run_until_complete(self._async_get(key))
+
+    async def _async_set(self, key: str, value: dict, ttl_days: int) -> None:
+        assert self._redis is not None
+        await self._redis.set(
+            f"eval:{key}",
+            json.dumps(value),
+            ex=ttl_days * 86400,
         )
 
+    def set(self, key: str, value: dict, ttl_days: int) -> None:
+        asyncio.get_event_loop().run_until_complete(self._async_set(key, value, ttl_days))
 
-def _cache_clear() -> int:
-    """Delete all rows from the cache table. Returns rows deleted."""
-    with _cache_conn() as conn:
-        cur = conn.execute("DELETE FROM eval_cache")
-        return cur.rowcount
+    async def _async_clear(self) -> int:
+        assert self._redis is not None
+        keys = []
+        async for k in self._redis.scan_iter(match="eval:*"):
+            keys.append(k)
+        if keys:
+            return await self._redis.delete(*keys)
+        return 0
+
+    def clear(self) -> int:
+        return asyncio.get_event_loop().run_until_complete(self._async_clear())
+
+
+def _build_cache() -> CacheBackend:
+    backend = os.environ.get("EVAL_CACHE_BACKEND", "sqlite").lower()
+    if backend == "sqlite":
+        return SQLiteCache(EVAL_CACHE_PATH)
+    elif backend == "redis":
+        url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+        return RedisCache(url)
+    else:
+        raise ValueError(f"Unknown EVAL_CACHE_BACKEND={backend!r}. Supported: sqlite, redis")
+
+
+cache: CacheBackend = _build_cache()
 
 
 # ---------------------------------------------------------------------------
@@ -263,8 +339,9 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def _startup() -> None:
-    _init_cache_db()
-    log.info("Cache DB initialised at %s (TTL=%d days)", EVAL_CACHE_PATH, EVAL_CACHE_TTL_DAYS)
+    cache.init()
+    backend_name = type(cache).__name__
+    log.info("Cache initialised: backend=%s (TTL=%d days)", backend_name, EVAL_CACHE_TTL_DAYS)
 
 
 class EvalRequest(BaseModel):
@@ -301,7 +378,7 @@ async def eval_sentiment(req: EvalRequest):
 
     # --- cache lookup ---
     cache_key = _make_cache_key(vendor, req.model_endpoint, req.config, SAMPLE_SIZE)
-    cached = _cache_get(cache_key)
+    cached = cache.get(cache_key)
     if cached is not None:
         log.info("Cache HIT for key=%s vendor=%s endpoint=%s", cache_key[:12], vendor, req.model_endpoint)
         return EvalResponse(source="cached_v1", result=EvalResult(**cached))
@@ -344,7 +421,7 @@ async def eval_sentiment(req: EvalRequest):
     )
 
     # --- cache store ---
-    _cache_put(cache_key, vendor, req.model_endpoint, result.model_dump())
+    cache.set(cache_key, result.model_dump(), EVAL_CACHE_TTL_DAYS)
 
     return EvalResponse(result=result)
 
@@ -377,7 +454,7 @@ async def eval_sentiment_stream(
             return StreamingResponse(_error_gen(), media_type="text/event-stream")
 
     cache_key = _make_cache_key(vendor, model_endpoint, parsed_config, SAMPLE_SIZE)
-    cached = _cache_get(cache_key)
+    cached = cache.get(cache_key)
 
     if cached is not None:
         log.info("Stream cache HIT for key=%s", cache_key[:12])
@@ -480,7 +557,7 @@ async def eval_sentiment_stream(
                 "ood_n": ood_total,
             }
 
-            _cache_put(cache_key, vendor, model_endpoint, result_dict)
+            cache.set(cache_key, result_dict, EVAL_CACHE_TTL_DAYS)
 
             yield _sse_event({
                 "type": "result",
@@ -506,7 +583,7 @@ async def eval_sentiment_stream(
 @app.post("/eval/cache/clear")
 async def clear_cache():
     """Delete all cached eval results."""
-    deleted = _cache_clear()
+    deleted = cache.clear()
     log.info("Cache cleared: %d rows deleted", deleted)
     return {"deleted": deleted}
 

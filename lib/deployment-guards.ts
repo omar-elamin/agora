@@ -22,6 +22,14 @@ export function computeDeploymentGuards(
         description:
           "Add output language detection guard to catch cases where the transcription language does not match the expected input language. Prevents wrong-language output from reaching downstream consumers.",
       },
+      {
+        vendor,
+        severity: "required",
+        guard_type: "language_code_routing",
+        affected_languages: ["ar", "ko", "ja"],
+        description:
+          "When AssemblyAI returns a non-English language_code, the transcription is in the wrong language (100% WER observed for ar, ko, ja). Route to Deepgram Nova-3 as recovery vendor.",
+      },
     ];
   }
 

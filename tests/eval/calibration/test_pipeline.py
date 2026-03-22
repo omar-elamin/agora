@@ -151,6 +151,35 @@ class TestFullPipeline:
                 assert "trust_score" in ts_json
                 assert "component_breakdown" in ts_json
 
+            # Check V2 report files and metadata
+            for vid in ["vendor_good", "vendor_overconf", "vendor_bad"]:
+                base = os.path.join(
+                    tmpdir, "vendors", vid, "calibration", "language_id"
+                )
+                v2_path = os.path.join(base, "calibration-report-v2-2026-03-19.json")
+                assert os.path.exists(v2_path), f"V2 report missing for {vid}"
+
+                with open(v2_path) as f:
+                    v2 = json.load(f)
+                assert "trust_score_id" in v2
+                assert "trust_label" in v2
+                assert "ece_adaptive" in v2
+                assert "brier" in v2
+                assert "fds" in v2
+                assert "metrics_normalized" in v2
+                assert "flags" in v2
+                assert "reliability_diagram" in v2
+                assert isinstance(v2["reliability_diagram"], list)
+                assert v2["trust_score_id"] >= 0.0
+                assert v2["trust_score_id"] <= 1.0
+
+                # Check metadata on legacy report
+                report = reports[vid]
+                assert "trust_score_id" in report.metadata
+                assert "fds_auroc" in report.metadata
+                assert "ece_adaptive" in report.metadata
+                assert report.calibration.brier_score is not None
+
             # Check comparison artifacts
             comp_dir = os.path.join(
                 tmpdir, "comparisons", "language_id", "2026-03-19"
