@@ -21,7 +21,8 @@ import { ProbeService } from "@/lib/probe-service";
 import type { ValidationProbeResult } from "@/lib/probe-service";
 import { computePRS, PRS_WEIGHT_PROFILES, fetchOODFromKV } from "@/lib/prs-calculator";
 import type { PRSResult, UseCaseProfile } from "@/lib/prs-calculator";
-import { getDataset } from "@/lib/datasets";
+import { getDataset, runDatasetEvalWithProgress } from "@/lib/datasets";
+import { runLLMVendors } from "@/lib/llm-vendors";
 import crypto from "crypto";
 
 const probeService = new ProbeService();
@@ -65,9 +66,10 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { audio_url, ground_truth, vendors, ood, use_case_profile, dataset_id } = body as {
+  const { audio_url, ground_truth, vendors, ood, use_case_profile, dataset_id, dataset } = body as {
     audio_url?: string;
     dataset_id?: string;
+    dataset?: string;
     ground_truth?: string;
     vendors?: string[];
     ood?: {
@@ -87,23 +89,93 @@ export async function POST(req: NextRequest) {
   }
 
 
-  // Dataset-backed eval: validate dataset_id and return metadata
-  if (dataset_id) {
-    const dataset = getDataset(dataset_id);
-    if (!dataset) {
-      return corsJson({ error: `Dataset '${dataset_id}' not found` }, { status: 404 });
+  // Dataset-backed eval: support both `dataset` and `dataset_id` params
+  const resolvedDatasetId = dataset ?? dataset_id;
+  if (resolvedDatasetId) {
+    const datasetMeta = getDataset(resolvedDatasetId);
+    if (!datasetMeta) {
+      return corsJson({ error: `Dataset '${resolvedDatasetId}' not found` }, { status: 404 });
     }
     const eval_id = crypto.randomUUID();
-    const evalResult = {
+    const submitted_at_ds = new Date().toISOString();
+
+    const pendingState = {
       eval_id,
       status: "pending" as const,
-      mode: "dataset",
-      dataset,
-      submitted_at: new Date().toISOString(),
-      message: "Dataset eval acknowledged. Full dataset evaluation coming soon.",
+      dataset_id: resolvedDatasetId,
+      submitted_at: submitted_at_ds,
+      rows_processed: 0,
+      rows_total: datasetMeta.row_count,
     };
-    await kv.set(`eval:${eval_id}`, evalResult);
-    return corsJson(evalResult);
+    await kv.set(`eval:${eval_id}`, pendingState);
+
+    // Fire-and-forget background processing
+    const requestedVendorsList = vendors;
+    void (async () => {
+      try {
+        await kv.set(`eval:${eval_id}`, {
+          ...pendingState,
+          status: "processing",
+        });
+
+        const evalData = await runDatasetEvalWithProgress(
+          resolvedDatasetId,
+          async (processed, total) => {
+            await kv.set(`eval:${eval_id}`, {
+              eval_id,
+              status: "processing",
+              dataset_id: resolvedDatasetId,
+              submitted_at: submitted_at_ds,
+              rows_processed: processed,
+              rows_total: total,
+              percent_complete: parseFloat((processed / total).toFixed(4)),
+            });
+          },
+        );
+
+        if (!evalData) {
+          await kv.set(`eval:${eval_id}`, {
+            eval_id,
+            status: "error",
+            error: `Dataset '${resolvedDatasetId}' source file not found`,
+          });
+          return;
+        }
+
+        // Run LLM vendor benchmark if vendors requested
+        let vendor_benchmark: Awaited<ReturnType<typeof runLLMVendors>> | undefined;
+        if (requestedVendorsList && Array.isArray(requestedVendorsList) && requestedVendorsList.length > 0) {
+          vendor_benchmark = await runLLMVendors(evalData.rows, requestedVendorsList, { limit: 50 });
+        }
+
+        const completed_at_ds = new Date().toISOString();
+        const evalResult = {
+          eval_id,
+          status: "complete" as const,
+          mode: "dataset",
+          dataset: evalData.dataset,
+          submitted_at: submitted_at_ds,
+          completed_at: completed_at_ds,
+          sample_size: evalData.sample_size,
+          label_distribution: evalData.label_distribution,
+          temporal_window_distribution: evalData.temporal_window_distribution,
+          split_distribution: evalData.split_distribution,
+          rows_processed: evalData.sample_size,
+          rows_total: datasetMeta.row_count,
+          percent_complete: 1,
+          ...(vendor_benchmark ? { vendor_benchmark } : {}),
+        };
+        await kv.set(`eval:${eval_id}`, { ...evalResult, rows: undefined });
+      } catch (err) {
+        await kv.set(`eval:${eval_id}`, {
+          eval_id,
+          status: "error",
+          error: err instanceof Error ? err.message : "Unknown error",
+        });
+      }
+    })();
+
+    return corsJson({ eval_id, status: "pending", submitted_at: submitted_at_ds }, { status: 202 });
   }
 
   if (!audio_url) {
