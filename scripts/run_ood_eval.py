@@ -6,6 +6,7 @@ from pathlib import Path
 
 from agora.eval.ood.pipeline import run_ood_pipeline
 from agora.eval.ood.kv_store import save_ood_results
+from agora.eval.ood.charts import generate_eval_charts
 
 DATA_PATH = Path.home() / "Documents/rachel-vault/research/agora/temporalwiki-eval-set-2026-03-21/test_ood.jsonl"
 MAX_LINES = 200
@@ -54,6 +55,17 @@ def main():
         task_category="text_classification",
         result=result,
     )
+
+    # Generate charts
+    charts_dir = (
+        Path.home()
+        / "Documents/rachel-vault/research/agora/eval-results"
+        / f"temporal-baseline-{result.eval_date}"
+    )
+    chart_paths = generate_eval_charts(result, charts_dir)
+    print(f"Charts saved to: {charts_dir}")
+    for name, path in chart_paths.items():
+        print(f"  {name}: {path}")
 
     print(f"eval_date:            {result.eval_date}")
     print(f"id_ece:               {result.id_ece:.4f}")
