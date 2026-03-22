@@ -35,3 +35,32 @@ export async function getOrCreateCustomer(
 
   return null;
 }
+
+export async function createCustomerForApiKey(
+  apiKey: string
+): Promise<string> {
+  const customer = await stripe.customers.create({
+    metadata: { agora_api_key: apiKey },
+  });
+  return customer.id;
+}
+
+export async function customerHasPaymentMethod(
+  customerId: string
+): Promise<boolean> {
+  const methods = await stripe.paymentMethods.list({
+    customer: customerId,
+    limit: 1,
+  });
+  return methods.data.length > 0;
+}
+
+export async function createSetupIntent(
+  customerId: string
+): Promise<string> {
+  const intent = await stripe.setupIntents.create({
+    customer: customerId,
+    automatic_payment_methods: { enabled: true },
+  });
+  return intent.client_secret!;
+}

@@ -4,6 +4,7 @@ import { transcribe as deepgramTranscribe } from "@/lib/deepgram";
 import { transcribe as whisperTranscribe } from "@/lib/whisper";
 import { kv } from "@/lib/kv";
 import { corsJson, corsOptions } from "@/lib/cors";
+import { chargeForEval, customerHasPaymentMethod } from "@/lib/stripe";
 import { detectRoutingFailure } from "@/lib/whisper-routing-detector";
 import type { WhisperVerboseOutput } from "@/lib/whisper-routing-detector";
 import { computeSilentFailureRisk } from "@/lib/silent-failure-risk";
@@ -64,6 +65,53 @@ export async function POST(req: NextRequest) {
   if (!auth.valid) {
     return corsJson({ error: auth.error }, { status: 401 });
   }
+
+  // --- Billing gate ---
+  const FREE_TIER_LIMIT = 5;
+  const usageKey = `usage:${apiKey}:count`;
+  const currentUsage = ((await kv.get(usageKey)) as number) ?? 0;
+
+  if (currentUsage >= FREE_TIER_LIMIT) {
+    const keyData = (await kv.get(`apikey:${apiKey}`)) as {
+      stripe_customer_id?: string;
+    } | null;
+    const customerId = keyData?.stripe_customer_id;
+
+    if (!customerId) {
+      return corsJson(
+        {
+          error: "Payment required. No Stripe customer linked to this API key. Create one via POST /api/v1/billing/setup-intent.",
+          code: "no_customer",
+        },
+        { status: 402 },
+      );
+    }
+
+    const hasPayment = await customerHasPaymentMethod(customerId);
+    if (!hasPayment) {
+      return corsJson(
+        {
+          error: "Payment required. Add a payment method via POST /api/v1/billing/setup-intent before running paid evals.",
+          code: "no_payment_method",
+        },
+        { status: 402 },
+      );
+    }
+
+    try {
+      await chargeForEval(customerId);
+    } catch (err) {
+      return corsJson(
+        {
+          error: `Payment failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+          code: "payment_failed",
+        },
+        { status: 402 },
+      );
+    }
+  }
+
+  await kv.set(usageKey, currentUsage + 1);
 
   const body = await req.json();
   const { audio_url, ground_truth, vendors, ood, use_case_profile, dataset_id, dataset } = body as {

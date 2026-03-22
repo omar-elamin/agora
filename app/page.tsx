@@ -23,13 +23,6 @@ export default function Home() {
           color: #a3a3a3;
           font-size: 1rem;
           line-height: 1.7;
-          margin: 0 0 1.5rem;
-          max-width: 600px;
-        }
-        .value-prop {
-          color: #888;
-          font-size: 0.95rem;
-          line-height: 1.7;
           margin: 0 0 2.5rem;
           max-width: 600px;
         }
@@ -64,7 +57,7 @@ export default function Home() {
         .cta {
           display: inline-flex;
           align-items: center;
-          background: #e5e5e5;
+          background: #22c55e;
           color: #0a0a0a;
           border: none;
           border-radius: 5px;
@@ -76,7 +69,7 @@ export default function Home() {
           letter-spacing: -0.01em;
           transition: background 0.15s;
         }
-        .cta:hover { background: #fff; }
+        .cta:hover { background: #4ade80; }
         .cta-note {
           color: #444;
           font-size: 0.8rem;
@@ -113,6 +106,38 @@ export default function Home() {
           white-space: pre;
         }
         .snippet .cm { color: #383838; }
+        .pricing {
+          display: flex;
+          gap: 1.5rem;
+          width: 100%;
+        }
+        .pricing-card {
+          flex: 1;
+          border: 1px solid #1e1e1e;
+          border-radius: 6px;
+          padding: 1.5rem;
+          background: #111;
+        }
+        .pricing-tier {
+          font-size: 0.7rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #22c55e;
+          font-weight: 600;
+          margin: 0 0 0.5rem;
+        }
+        .pricing-amount {
+          font-size: 2rem;
+          font-weight: 700;
+          color: #e5e5e5;
+          margin: 0 0 0.5rem;
+        }
+        .pricing-detail {
+          color: #a3a3a3;
+          font-size: 0.85rem;
+          line-height: 1.6;
+          margin: 0;
+        }
       `}</style>
 
       <main className="landing">
@@ -122,24 +147,17 @@ export default function Home() {
         </h1>
 
         <p className="subhead">
-          Every ASR vendor publishes accuracy numbers on clean audio. Those numbers are real.
-          They just don&apos;t tell you what happens when your audio isn&apos;t clean — and they
-          definitely don&apos;t tell you when a wrong answer looks like a right one.
-        </p>
-
-        <p className="value-prop">
-          Agora runs your audio across the vendors you&apos;re evaluating and surfaces what they
-          can&apos;t — or won&apos;t — show you: which failure modes are silent, which are
-          catchable, and which one you can actually live with.
+          Vendor accuracy numbers are real — but only on clean audio. Agora runs your audio
+          across the vendors you&apos;re evaluating and surfaces what they won&apos;t: which
+          failure modes are silent, which are catchable, and which you can live with.
         </p>
 
         <div className="callout">
           <div className="callout-label">What we found</div>
           <p className="callout-text">
-            AssemblyAI returned 88% confidence on a Spanish-accent transcript that was 37% wrong.
-            No flag. No alert. A standard confidence threshold would have let it through.
+            88% confidence. 37% wrong. AssemblyAI returned that on a Spanish-accent transcript —
+            no flag, no alert. A standard confidence threshold would have let it through.
             That&apos;s not an accuracy problem. That&apos;s a silent failure problem.
-            And vendor benchmarks don&apos;t show it.
           </p>
         </div>
 
@@ -155,7 +173,33 @@ export default function Home() {
 
         <hr className="divider" />
 
-        <div className="api-label">API</div>
+        <div className="api-label">Pricing</div>
+
+        <div className="pricing">
+          <div className="pricing-card">
+            <div className="pricing-tier">Free tier</div>
+            <div className="pricing-amount">$0</div>
+            <p className="pricing-detail">First 5 evals per API key — no credit card required.</p>
+          </div>
+          <div className="pricing-card">
+            <div className="pricing-tier">Per eval</div>
+            <div className="pricing-amount">$0.10</div>
+            <p className="pricing-detail">After the free tier. Billed per eval via Stripe. Add a payment method to continue.</p>
+          </div>
+        </div>
+
+        <div className="cta-row" style={{ marginTop: "2rem" }}>
+          <a href="/api/v1/keys" className="cta" style={{ cursor: "default", pointerEvents: "none", opacity: 0.9 }}>
+            Get API Key
+          </a>
+          <p className="cta-note">
+            POST /api/v1/keys to generate a key. First 5 evals are free.
+          </p>
+        </div>
+
+        <hr className="divider" />
+
+        <div className="api-label">For developers</div>
 
         <div className="snippet">
           <pre>{`# generate a key
