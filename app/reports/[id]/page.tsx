@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { kv } from "@/lib/kv";
 import OodReportView from "@/app/reports/OodReportView";
+import ShareButton from "./ShareButton";
+import ExportPdfButton from "./ExportPdfButton";
 import type { OodReportData } from "@/app/types/ood-report";
 import type { Metadata } from "next";
 
@@ -115,5 +117,22 @@ export default async function ReportPage({ params }: Props) {
     );
   }
 
-  return <OodReportView data={report} />;
+  return (
+    <>
+      <style>{"@media print { .no-print { display: none !important; } }"}</style>
+      <OodReportView data={report} />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "12px",
+          padding: "24px",
+          background: "#0a0a0a",
+        }}
+      >
+        <ShareButton reportId={id} />
+        <ExportPdfButton reportId={id} apiKey={apiKey} />
+      </div>
+    </>
+  );
 }
