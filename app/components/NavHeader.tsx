@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { label: "Home", href: "/" },
   { label: "Compare", href: "/compare" },
   { label: "Eval Report", href: "/eval-report" },
+  { label: "Vendor Eval", href: "/vendor-eval" },
   { label: "Artifacts", href: "/artifacts" },
   { label: "Calculator", href: "/calculator" },
   { label: "Docs", href: "/docs/integrations" },
