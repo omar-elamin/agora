@@ -60,6 +60,43 @@ export interface RoutingFailureResult {
   total_segments: number;
 }
 
+// --- Language Normalization ---
+
+/**
+ * Map of Whisper full language names to ISO 639-1 codes.
+ * Whisper sometimes returns "English" instead of "en" depending on the API endpoint/version.
+ */
+const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
+  english: "en",
+  spanish: "es",
+  french: "fr",
+  german: "de",
+  portuguese: "pt",
+  italian: "it",
+  dutch: "nl",
+  russian: "ru",
+  chinese: "zh",
+  japanese: "ja",
+  korean: "ko",
+  arabic: "ar",
+  hindi: "hi",
+  turkish: "tr",
+  polish: "pl",
+  swedish: "sv",
+  danish: "da",
+  norwegian: "no",
+  finnish: "fi",
+};
+
+/**
+ * Normalize a Whisper language string to a lowercase ISO 639-1 code.
+ * Handles cases where Whisper returns the full name ("English") instead of the code ("en").
+ */
+function normalizeLanguage(lang: string): string {
+  const lower = lang.toLowerCase().trim();
+  return LANGUAGE_NAME_TO_CODE[lower] ?? lower;
+}
+
 // --- Thresholds ---
 
 /** If language != 'en', it's a hard routing failure regardless of other signals */
@@ -98,7 +135,7 @@ export function detectRoutingFailure(
   languageProbability: number,
   expectedLanguage: string = EXPECTED_LANGUAGE
 ): RoutingFailureResult {
-  const detectedLanguage = output.language;
+  const detectedLanguage = normalizeLanguage(output.language);
   const segments = output.segments ?? [];
 
   // Compute mean avg_logprob across segments
