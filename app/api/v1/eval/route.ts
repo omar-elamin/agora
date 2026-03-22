@@ -21,6 +21,7 @@ import { ProbeService } from "@/lib/probe-service";
 import type { ValidationProbeResult } from "@/lib/probe-service";
 import { computePRS, PRS_WEIGHT_PROFILES, fetchOODFromKV } from "@/lib/prs-calculator";
 import type { PRSResult, UseCaseProfile } from "@/lib/prs-calculator";
+import { getDataset } from "@/lib/datasets";
 import crypto from "crypto";
 
 const probeService = new ProbeService();
@@ -64,8 +65,9 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { audio_url, ground_truth, vendors, ood, use_case_profile } = body as {
-    audio_url: string;
+  const { audio_url, ground_truth, vendors, ood, use_case_profile, dataset_id } = body as {
+    audio_url?: string;
+    dataset_id?: string;
     ground_truth?: string;
     vendors?: string[];
     ood?: {
@@ -82,6 +84,26 @@ export async function POST(req: NextRequest) {
       { error: `Invalid use_case_profile '${use_case_profile}'. Valid values: ${VALID_PROFILES.join(', ')}` },
       { status: 400 },
     );
+  }
+
+
+  // Dataset-backed eval: validate dataset_id and return metadata
+  if (dataset_id) {
+    const dataset = getDataset(dataset_id);
+    if (!dataset) {
+      return corsJson({ error: `Dataset '${dataset_id}' not found` }, { status: 404 });
+    }
+    const eval_id = crypto.randomUUID();
+    const evalResult = {
+      eval_id,
+      status: "pending" as const,
+      mode: "dataset",
+      dataset,
+      submitted_at: new Date().toISOString(),
+      message: "Dataset eval acknowledged. Full dataset evaluation coming soon.",
+    };
+    await kv.set(`eval:${eval_id}`, evalResult);
+    return corsJson(evalResult);
   }
 
   if (!audio_url) {
