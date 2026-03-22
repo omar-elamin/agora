@@ -5,16 +5,115 @@ export default function Home() {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
         alignItems: "center",
-        padding: "2rem",
+        padding: "4rem 2rem 2rem",
       }}
     >
-      <h1 style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>Agora.</h1>
-      <p style={{ color: "#888", fontSize: "1.1rem", marginBottom: "3rem" }}>
-        benchmark any AI vendor on your data.
-      </p>
+      {/* Hero */}
+      <section
+        style={{
+          maxWidth: "720px",
+          width: "100%",
+          marginBottom: "3rem",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "2.6rem",
+            lineHeight: 1.15,
+            marginBottom: "1.5rem",
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Vendors don&apos;t show you how they fail.
+          <br />
+          Agora does.
+        </h1>
 
+        <p
+          style={{
+            color: "#a3a3a3",
+            fontSize: "1.1rem",
+            lineHeight: 1.7,
+            marginBottom: "1.5rem",
+          }}
+        >
+          Every ASR vendor publishes accuracy numbers on clean audio. Those
+          numbers are real. They just don&apos;t tell you what happens when your
+          audio isn&apos;t clean&nbsp;&mdash; and they definitely don&apos;t tell
+          you when a wrong answer looks like a right one.
+        </p>
+
+        <p
+          style={{
+            color: "#d4d4d4",
+            fontSize: "1rem",
+            lineHeight: 1.7,
+            marginBottom: "2.5rem",
+          }}
+        >
+          Agora runs your audio across the vendors you&apos;re evaluating and
+          surfaces what they can&apos;t&nbsp;&mdash; or won&apos;t&nbsp;&mdash;
+          show you: which failure modes are silent, which are catchable, and
+          which one you can actually live with.
+        </p>
+
+        {/* Callout / pull quote */}
+        <blockquote
+          style={{
+            borderLeft: "3px solid #4ade80",
+            margin: "0 0 2.5rem",
+            padding: "1.25rem 1.5rem",
+            backgroundColor: "rgba(74, 222, 128, 0.05)",
+            borderRadius: "0 6px 6px 0",
+            color: "#d4d4d4",
+            fontSize: "0.9rem",
+            lineHeight: 1.75,
+            fontStyle: "italic",
+          }}
+        >
+          <strong style={{ color: "#e5e5e5", fontStyle: "normal" }}>
+            What we found:
+          </strong>{" "}
+          AssemblyAI returned 88% confidence on a Spanish-accent transcript that
+          was 37% wrong. No flag. No alert. A standard confidence threshold
+          would have let it through. That&apos;s not an accuracy
+          problem. That&apos;s a silent failure problem. And vendor benchmarks
+          don&apos;t show it.
+        </blockquote>
+
+        {/* CTA */}
+        <div style={{ marginBottom: "1rem" }}>
+          <a
+            href="mailto:rachel@caretta.so"
+            style={{
+              display: "inline-block",
+              backgroundColor: "#4ade80",
+              color: "#0a0a0a",
+              fontWeight: 600,
+              fontSize: "1rem",
+              padding: "0.75rem 1.75rem",
+              borderRadius: "6px",
+              textDecoration: "none",
+            }}
+          >
+            Request early access &rarr;
+          </a>
+        </div>
+        <p
+          style={{
+            color: "#737373",
+            fontSize: "0.85rem",
+            lineHeight: 1.6,
+          }}
+        >
+          No clean-audio demos. No generic benchmarks. Just your audio, your
+          conditions, your failure modes.
+        </p>
+      </section>
+
+      {/* API curl examples */}
       <div
         style={{
           backgroundColor: "#1a1a1a",
@@ -48,6 +147,7 @@ export default function Home() {
         </pre>
       </div>
 
+      {/* Statistical Rigor */}
       <div
         style={{
           backgroundColor: "#1a1a1a",
