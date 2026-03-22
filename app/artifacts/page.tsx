@@ -1,5 +1,6 @@
 import Link from "next/link";
 import artifacts from "../data/artifacts.json";
+import styles from "./artifacts.module.css";
 
 export const metadata = {
   title: "Artifact Registry | Agora",
@@ -31,15 +32,7 @@ export default function ArtifactsPage() {
             href={`/artifacts/${artifact.slug}`}
             style={{ textDecoration: "none", color: "inherit" }}
           >
-            <div
-              style={{
-                background: "#111",
-                border: "1px solid #222",
-                borderRadius: 8,
-                padding: "1.5rem",
-                transition: "border-color 0.15s",
-              }}
-            >
+            <div className={styles.card}>
               <div
                 style={{
                   display: "flex",
@@ -112,6 +105,20 @@ export default function ArtifactsPage() {
             </div>
           </Link>
         ))}
+
+        {/* Coming soon placeholder */}
+        <div
+          style={{
+            border: "1px dashed #2a2a2a",
+            borderRadius: 8,
+            padding: "1.5rem",
+            textAlign: "center",
+            color: "#555",
+            fontSize: "0.85rem",
+          }}
+        >
+          more artifacts coming soon
+        </div>
       </div>
     </main>
   );
