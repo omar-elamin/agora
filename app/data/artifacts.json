@@ -1,0 +1,44 @@
+[
+  {
+    "slug": "temporalwiki-degradation-eval",
+    "name": "TemporalWiki Degradation Eval",
+    "version": "1.0",
+    "author": "Rachel Marin, Agora",
+    "published": "2026-03-22",
+    "description": "A fully reproducible benchmark that measures how text classifier accuracy degrades as training data ages. Built on real Wikipedia edit diffs across four temporal snapshots - no human labeling required.",
+    "keyFinding": "A model trained on fresh data loses ~3.8% accuracy after 9 months of world-knowledge drift. The degradation is monotonic and measurable.",
+    "tags": ["temporal-drift", "classification", "wikipedia", "reproducible"],
+    "status": "available",
+    "degradationResults": [
+      { "label": "Baseline", "accuracy": 63.50, "delta": null },
+      { "label": "~4 months", "accuracy": 63.29, "delta": -0.21 },
+      { "label": "~6 months", "accuracy": 60.66, "delta": -2.84 },
+      { "label": "~9 months", "accuracy": 59.66, "delta": -3.84 }
+    ],
+    "datasetSpecs": {
+      "source": "seonghyeonye/TemporalWiki (TWiki_Diffsets.zip)",
+      "size": "932MB, ~3.3M rows",
+      "evalSize": "40,000 articles per run (10K per temporal snapshot)",
+      "categories": "12-class Wikipedia topic taxonomy",
+      "temporalWindows": "Aug-Sep, Sep-Oct, Oct-Nov, Nov-Dec Wikipedia edit diffs",
+      "groundTruth": "Wikipedia category structure - no human annotation"
+    },
+    "intendedUse": [
+      "Model freshness audits - run quarterly, catch drift before users do",
+      "Retraining triggers - use 6-month threshold as decision gate",
+      "Vendor evaluation - demand reproducible temporal eval from every vendor",
+      "SLA calibration - empirical grounding for accuracy guarantees"
+    ],
+    "limitations": [
+      "TF-IDF classifier (not neural). Production LLMs may show stronger degradation.",
+      "Wikipedia content is 2008-2012 era. Modern content drift velocity may differ.",
+      "12-class proxy task - not direct NLP task degradation measurement.",
+      "40K sample - full 800K+ run would increase confidence."
+    ],
+    "access": {
+      "type": "registry",
+      "huggingface": "agora-hq/temporalwiki-degradation-eval",
+      "note": "Available via Agora artifact registry. HuggingFace listing coming soon."
+    }
+  }
+]
