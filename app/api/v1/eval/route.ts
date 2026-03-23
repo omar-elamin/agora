@@ -25,6 +25,8 @@ import { computePRS, PRS_WEIGHT_PROFILES, fetchOODFromKV } from "@/lib/prs-calcu
 import type { PRSResult, UseCaseProfile } from "@/lib/prs-calculator";
 import { getDataset, runDatasetEvalWithProgress } from "@/lib/datasets";
 import { runLLMVendors } from "@/lib/llm-vendors";
+import { routeAndTranscribe } from "@/lib/asr-router";
+import type { RoutedTranscriptResult, RoutingDecision } from "@/lib/asr-router";
 import crypto from "crypto";
 
 const probeService = new ProbeService();
@@ -115,7 +117,7 @@ export async function POST(req: NextRequest) {
   await kv.set(usageKey, currentUsage + 1);
 
   const body = await req.json();
-  const { audio_url, ground_truth, vendors, ood, use_case_profile, dataset_id, dataset } = body as {
+  const { audio_url, ground_truth, vendors, ood, use_case_profile, dataset_id, dataset, caller_type } = body as {
     audio_url?: string;
     dataset_id?: string;
     dataset?: string;
@@ -127,6 +129,7 @@ export async function POST(req: NextRequest) {
       ood_detection_auroc?: number;
     };
     use_case_profile?: string;
+    caller_type?: "rep" | "prospect";
   };
 
   const VALID_PROFILES = Object.keys(PRS_WEIGHT_PROFILES);
@@ -229,6 +232,122 @@ export async function POST(req: NextRequest) {
 
   if (!audio_url) {
     return corsJson({ error: "audio_url is required" }, { status: 400 });
+  }
+
+  // --- Routed path: when caller_type is provided, use ASR routing layer ---
+  if (caller_type) {
+    const submitted_at = new Date().toISOString();
+    let routed: RoutedTranscriptResult;
+    try {
+      routed = await routeAndTranscribe(audio_url, caller_type);
+    } catch (err) {
+      return corsJson(
+        { error: `Routing transcription failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+        { status: 502 },
+      );
+    }
+    const completed_at = new Date().toISOString();
+
+    const vendor = routed.routing.model as Vendor;
+    const wer = ground_truth !== undefined
+      ? computeWER(routed.transcript, ground_truth)
+      : null;
+
+    const silent_failure_risk = computeSilentFailureRisk({
+      vendor,
+      wer,
+      routing_failure: false,
+      routing_failure_reason: null,
+    });
+    const deployment_guards = computeDeploymentGuards(vendor);
+
+    // Calibration pipeline for routed result
+    const today = new Date().toISOString().slice(0, 10);
+    const eval_id = crypto.randomUUID();
+
+    let calibration_result: CalibrationResult | null = null;
+    let fds_result: FDSResult | null = null;
+    let trust_score_result: TrustScoreResult | null = null;
+    let reliability_diagram_url: string | null = null;
+    let prs_result: PRSResult | null = null;
+
+    if (ground_truth && routed.transcript) {
+      const pred: PredictionRecord = {
+        example_id: eval_id,
+        vendor_id: vendor,
+        predicted_label: routed.transcript.trim(),
+        ground_truth_label: ground_truth,
+        confidence: 1.0,
+        full_probs: null,
+        task_category: "asr",
+        eval_date: today,
+        confidence_available: false,
+      };
+      const allPredictions: Record<string, PredictionRecord[]> = { [vendor]: [pred] };
+
+      try {
+        const report = runCalibration(vendor, [pred], allPredictions);
+        calibration_result = report.calibration;
+        fds_result = report.fds;
+        trust_score_result = report.trust_score;
+        reliability_diagram_url = `/calibration-output/vendors/${vendor}/calibration/asr/reliability-${today}.svg`;
+      } catch (err) {
+        console.error(`[calibration] routed ${vendor} failed:`, err);
+      }
+
+      const trustScoreValue = trust_score_result?.trust_score ?? 0.5;
+      try {
+        const kvOOD = await fetchOODFromKV(vendor, "asr");
+        const mergedOOD = {
+          mean_ece_shift: ood?.mean_ece_shift ?? kvOOD.mean_ece_shift,
+          max_cii: ood?.max_cii ?? kvOOD.max_cii,
+          ood_detection_auroc: ood?.ood_detection_auroc ?? kvOOD.ood_detection_auroc,
+        };
+        prs_result = computePRS({
+          vendor_id: vendor,
+          eval_date: today,
+          trust_score_id: trustScoreValue,
+          mean_ece_shift: mergedOOD.mean_ece_shift,
+          max_cii: mergedOOD.max_cii,
+          ood_detection_auroc: mergedOOD.ood_detection_auroc,
+          use_case_profile: use_case_profile as UseCaseProfile | undefined,
+        });
+      } catch (err) {
+        console.error(`[prs] routed ${vendor} failed:`, err);
+      }
+    }
+
+    const evalResult = {
+      eval_id,
+      status: "complete" as const,
+      mode: "routed",
+      submitted_at,
+      completed_at,
+      routing: routed.routing,
+      results: [
+        {
+          vendor,
+          transcript: routed.transcript,
+          latency_ms: routed.latency_ms,
+          cost_usd: routed.cost_usd,
+          duration_seconds: routed.duration_seconds,
+          wer,
+          routing_failure: false,
+          routing_failure_reason: null,
+          silent_failure_risk,
+          deployment_guards,
+          calibration_result,
+          fds_result,
+          trust_score_result,
+          reliability_diagram_url,
+          prs_result,
+          error: null,
+        },
+      ],
+    };
+
+    await kv.set(`eval:${eval_id}`, evalResult);
+    return corsJson(evalResult);
   }
 
   // Default to deepgram only for backward compat; accept vendors array
