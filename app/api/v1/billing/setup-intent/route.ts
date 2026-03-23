@@ -28,11 +28,11 @@ export async function POST(req: NextRequest) {
   // Create Stripe customer if one doesn't exist yet (for keys created before billing)
   let customerId = keyData.stripe_customer_id;
   if (!customerId) {
-    customerId = await createCustomerForApiKey(apiKey!);
+    customerId = await createCustomerForApiKey(apiKey!) ?? undefined;
     await kv.set(`apikey:${apiKey}`, { ...keyData, stripe_customer_id: customerId });
   }
 
-  const clientSecret = await createSetupIntent(customerId);
+  const clientSecret = await createSetupIntent(customerId!);
 
   return corsJson({ client_secret: clientSecret, customer_id: customerId });
 }
