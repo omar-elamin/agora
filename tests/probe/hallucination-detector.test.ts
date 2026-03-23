@@ -202,6 +202,7 @@ section("detectAndQuarantine wrapper");
     language: "en",
     language_probability: 0.95,
     segments: [],
+    fallback_used: false,
   };
   const dq = detectAndQuarantine(whisperResult, 0.5, "clip_test");
   assert(dq.quarantined === true, "wrapper: sparse transcript quarantined");

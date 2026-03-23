@@ -2,6 +2,8 @@
 // Groq offers Whisper large-v3 with generous free tier + low latency inference
 // Signup: https://console.groq.com → create API key → add as GROQ_API_KEY in Vercel env
 
+import { transcribe as transcribeViaAAI } from "./assemblyai";
+
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 // Fallback to OpenAI if Groq not available
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -22,6 +24,7 @@ export interface WhisperResult {
   language: string;
   language_probability: number;
   segments: WhisperVerboseSegment[];
+  fallback_used: boolean;
 }
 
 async function fetchAudioBlob(audioUrl: string): Promise<Blob> {
@@ -45,48 +48,86 @@ export async function transcribe(audioUrl: string, options?: { language?: string
   }
 }
 
+const GROQ_MAX_RETRIES = 3;
+
 async function transcribeViaGroq(audioUrl: string, options?: { language?: string }): Promise<WhisperResult> {
   const start = performance.now();
 
   const audioBlob = await fetchAudioBlob(audioUrl);
 
-  const formData = new FormData();
-  formData.append("file", audioBlob, "audio.mp3");
-  formData.append("model", "whisper-large-v3");
-  if (options?.language) {
-    formData.append("language", options.language);
-  }
-  formData.append("response_format", "verbose_json");
-
-  const res = await fetch(
-    "https://api.groq.com/openai/v1/audio/transcriptions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: formData,
+  for (let attempt = 1; attempt <= GROQ_MAX_RETRIES; attempt++) {
+    const formData = new FormData();
+    formData.append("file", audioBlob, "audio.mp3");
+    formData.append("model", "whisper-large-v3");
+    if (options?.language) {
+      formData.append("language", options.language);
     }
-  );
+    formData.append("response_format", "verbose_json");
 
-  if (!res.ok) {
+    const res = await fetch(
+      "https://api.groq.com/openai/v1/audio/transcriptions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (res.ok) {
+      const data = await res.json();
+      const latency_ms = Math.round(performance.now() - start);
+
+      const transcript = (data?.text ?? "") as string;
+      const duration_seconds = (data?.duration ?? 0) as number;
+      const cost_usd = parseFloat(
+        ((duration_seconds / 60) * GROQ_COST_PER_MINUTE_USD).toFixed(6)
+      );
+      const language = (data?.language ?? "en") as string;
+      const language_probability = (data?.language_probability ?? 1.0) as number;
+      const segments = (data?.segments ?? []) as WhisperVerboseSegment[];
+
+      return { transcript, duration_seconds, cost_usd, latency_ms, provider: "groq", language, language_probability, segments, fallback_used: false };
+    }
+
+    if (res.status === 429) {
+      const retryAfterHeader = res.headers.get("retry-after");
+      const retryAfterSeconds = retryAfterHeader ? parseFloat(retryAfterHeader) : Math.pow(2, attempt - 1);
+      console.warn(`[whisper] Groq 429 rate-limited — attempt ${attempt}/${GROQ_MAX_RETRIES}, retry-after: ${retryAfterHeader ?? "none (using exponential backoff)"}, waiting ${retryAfterSeconds}s`);
+
+      if (attempt < GROQ_MAX_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, retryAfterSeconds * 1000));
+        continue;
+      }
+
+      // All retries exhausted — fall back to AssemblyAI
+      console.warn(`[whisper] Groq 429 persisted after ${GROQ_MAX_RETRIES} retries — falling back to AssemblyAI`);
+      const aaiResult = await transcribeViaAAI(audioUrl, {
+        language_code: options?.language,
+      });
+
+      const latency_ms = Math.round(performance.now() - start);
+      return {
+        transcript: aaiResult.transcript,
+        duration_seconds: aaiResult.duration_seconds,
+        cost_usd: aaiResult.cost_usd,
+        latency_ms,
+        provider: "groq",
+        language: aaiResult.language_code ?? "en",
+        language_probability: aaiResult.confidence ?? 1.0,
+        segments: [],
+        fallback_used: true,
+      };
+    }
+
+    // Non-429 error — throw immediately
     const body = await res.text();
     throw new Error(`Groq Whisper API error ${res.status}: ${body}`);
   }
 
-  const data = await res.json();
-  const latency_ms = Math.round(performance.now() - start);
-
-  const transcript = (data?.text ?? "") as string;
-  const duration_seconds = (data?.duration ?? 0) as number;
-  const cost_usd = parseFloat(
-    ((duration_seconds / 60) * GROQ_COST_PER_MINUTE_USD).toFixed(6)
-  );
-  const language = (data?.language ?? "en") as string;
-  const language_probability = (data?.language_probability ?? 1.0) as number;
-  const segments = (data?.segments ?? []) as WhisperVerboseSegment[];
-
-  return { transcript, duration_seconds, cost_usd, latency_ms, provider: "groq", language, language_probability, segments };
+  // Unreachable, but satisfies TypeScript
+  throw new Error("Groq Whisper API: unexpected retry loop exit");
 }
 
 async function transcribeViaOpenAI(audioUrl: string, options?: { language?: string }): Promise<WhisperResult> {
@@ -130,5 +171,5 @@ async function transcribeViaOpenAI(audioUrl: string, options?: { language?: stri
   const language_probability = (data?.language_probability ?? 1.0) as number;
   const segments = (data?.segments ?? []) as WhisperVerboseSegment[];
 
-  return { transcript, duration_seconds, cost_usd, latency_ms, provider: "openai", language, language_probability, segments };
+  return { transcript, duration_seconds, cost_usd, latency_ms, provider: "openai", language, language_probability, segments, fallback_used: false };
 }

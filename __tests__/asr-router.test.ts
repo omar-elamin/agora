@@ -26,6 +26,7 @@ const fakeWhisperResult = {
   language: "en",
   language_probability: 0.99,
   segments: [],
+  fallback_used: false,
 };
 
 beforeEach(() => {
