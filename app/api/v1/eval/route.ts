@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { validateApiKey } from "@/lib/auth";
 import { transcribe as deepgramTranscribe } from "@/lib/deepgram";
 import { transcribe as whisperTranscribe } from "@/lib/whisper";
+import { transcribe as assemblyaiTranscribe } from "@/lib/assemblyai";
 import { kv } from "@/lib/kv";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { chargeForEval, customerHasPaymentMethod } from "@/lib/stripe";
@@ -28,7 +29,7 @@ import crypto from "crypto";
 
 const probeService = new ProbeService();
 
-const SUPPORTED_VENDORS = ["deepgram", "whisper-large-v3"] as const;
+const SUPPORTED_VENDORS = ["deepgram", "whisper-large-v3", "assemblyai"] as const;
 type Vendor = (typeof SUPPORTED_VENDORS)[number];
 
 function computeWER(hypothesis: string, reference: string): number {
@@ -254,6 +255,9 @@ export async function POST(req: NextRequest) {
         return { vendor, ...result };
       } else if (vendor === "whisper-large-v3") {
         const result = await whisperTranscribe(audio_url);
+        return { vendor, ...result };
+      } else if (vendor === "assemblyai") {
+        const result = await assemblyaiTranscribe(audio_url);
         return { vendor, ...result };
       }
       throw new Error(`Unknown vendor: ${vendor}`);
