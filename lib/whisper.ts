@@ -32,11 +32,11 @@ async function fetchAudioBlob(audioUrl: string): Promise<Blob> {
   return res.blob();
 }
 
-export async function transcribe(audioUrl: string): Promise<WhisperResult> {
+export async function transcribe(audioUrl: string, options?: { language?: string }): Promise<WhisperResult> {
   if (GROQ_API_KEY) {
-    return transcribeViaGroq(audioUrl);
+    return transcribeViaGroq(audioUrl, options);
   } else if (OPENAI_API_KEY) {
-    return transcribeViaOpenAI(audioUrl);
+    return transcribeViaOpenAI(audioUrl, options);
   } else {
     throw new Error(
       "Whisper vendor requires GROQ_API_KEY or OPENAI_API_KEY environment variable. " +
@@ -45,7 +45,7 @@ export async function transcribe(audioUrl: string): Promise<WhisperResult> {
   }
 }
 
-async function transcribeViaGroq(audioUrl: string): Promise<WhisperResult> {
+async function transcribeViaGroq(audioUrl: string, options?: { language?: string }): Promise<WhisperResult> {
   const start = performance.now();
 
   const audioBlob = await fetchAudioBlob(audioUrl);
@@ -53,7 +53,9 @@ async function transcribeViaGroq(audioUrl: string): Promise<WhisperResult> {
   const formData = new FormData();
   formData.append("file", audioBlob, "audio.mp3");
   formData.append("model", "whisper-large-v3");
-  formData.append("language", "en");
+  if (options?.language) {
+    formData.append("language", options.language);
+  }
   formData.append("response_format", "verbose_json");
 
   const res = await fetch(
@@ -87,7 +89,7 @@ async function transcribeViaGroq(audioUrl: string): Promise<WhisperResult> {
   return { transcript, duration_seconds, cost_usd, latency_ms, provider: "groq", language, language_probability, segments };
 }
 
-async function transcribeViaOpenAI(audioUrl: string): Promise<WhisperResult> {
+async function transcribeViaOpenAI(audioUrl: string, options?: { language?: string }): Promise<WhisperResult> {
   const start = performance.now();
 
   const audioBlob = await fetchAudioBlob(audioUrl);
@@ -95,7 +97,9 @@ async function transcribeViaOpenAI(audioUrl: string): Promise<WhisperResult> {
   const formData = new FormData();
   formData.append("file", audioBlob, "audio.mp3");
   formData.append("model", "whisper-1");
-  formData.append("language", "en");
+  if (options?.language) {
+    formData.append("language", options.language);
+  }
   formData.append("response_format", "verbose_json");
 
   const res = await fetch(
