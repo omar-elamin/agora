@@ -6,9 +6,12 @@ import { usePathname, useSearchParams } from "next/navigation";
 const NAV_ITEMS = [
   { label: "Home", href: "/" },
   { label: "Compare", href: "/compare" },
+  { label: "Platforms", href: "/platforms" },
   { label: "Eval Report", href: "/eval-report" },
   { label: "Vendor Eval", href: "/vendor-eval" },
+  { label: "Demo", href: "/demo" },
   { label: "Artifacts", href: "/artifacts" },
+  { label: "Pricing", href: "/pricing" },
   { label: "Calculator", href: "/calculator" },
   { label: "Docs", href: "/docs/integrations" },
 ];

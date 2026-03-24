@@ -1,0 +1,219 @@
+.page {
+  min-height: 100vh;
+  background: #0a0a0a;
+  padding: 48px 24px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* ── Hero ─────────────────────────────────────────────── */
+
+.h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #f9fafb;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ── Table ────────────────────────────────────────────── */
+
+.tableWrap {
+  margin-top: 40px;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 14px;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #1f2937;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 12px 14px;
+  color: #e5e5e5;
+  border-bottom: 1px solid #111827;
+  vertical-align: top;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.platformName {
+  font-weight: 600;
+  color: #f9fafb;
+  white-space: nowrap;
+}
+
+.signalFull {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.signalPartial {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+/* ── Deep Dives ───────────────────────────────────────── */
+
+.deepDives {
+  margin-top: 48px;
+}
+
+.h2 {
+  margin: 0 0 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #f9fafb;
+  letter-spacing: -0.01em;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .cardGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.cardTitle {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.card ul {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: none;
+}
+
+.card li {
+  position: relative;
+  padding-left: 4px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
+.card li::before {
+  content: "›";
+  position: absolute;
+  left: -14px;
+  color: #4b5563;
+}
+
+.cardResult {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #1f2937;
+  font-size: 12px;
+  color: #4ade80;
+}
+
+/* ── Why This Matters ─────────────────────────────────── */
+
+.whySection {
+  margin-top: 48px;
+}
+
+.whyText {
+  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.7;
+}
+
+/* ── CTA ──────────────────────────────────────────────── */
+
+.cta {
+  margin-top: 48px;
+  padding: 32px;
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.ctaHeading {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.ctaText {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: #6b7280;
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.ctaButton {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #166534;
+  border: 1px solid #4ade80;
+  border-radius: 8px;
+  color: #f9fafb;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ctaButton:hover {
+  background: #15803d;
+}
+
+/* ── Responsive table ─────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .table th,
+  .table td {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
