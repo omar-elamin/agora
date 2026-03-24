@@ -48,6 +48,35 @@ export default function Home() {
           line-height: 1.65;
           margin: 0;
         }
+        .charts-section {
+          width: 100%;
+          margin: 0 0 3rem;
+        }
+        .charts-label {
+          font-size: 0.7rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #22c55e;
+          font-weight: 600;
+          margin: 0 0 1rem;
+        }
+        .charts-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          width: 100%;
+        }
+        .chart-img {
+          width: 100%;
+          border-radius: 8px;
+          border: 1px solid #1e1e1e;
+        }
+        .chart-caption {
+          color: #666;
+          font-size: 0.75rem;
+          margin: 0.5rem 0 0;
+          line-height: 1.5;
+        }
         .cta-row {
           display: flex;
           flex-direction: column;
@@ -159,6 +188,34 @@ export default function Home() {
             no flag, no alert. A standard confidence threshold would have let it through.
             That&apos;s not an accuracy problem. That&apos;s a silent failure problem.
           </p>
+        </div>
+
+        <div className="callout">
+          <div className="callout-label">Latency — validated</div>
+          <p className="callout-text">
+            Sub-500ms P95 utterance-to-transcript, validated at production call pace. Median 385ms,
+            P95 470ms across 18 utterances at 1x realtime. Arabic-mixed calls show no degradation —
+            P95 delta &lt;2ms. This is the number that determines whether rep-assist is usable or
+            noise.
+          </p>
+        </div>
+
+        <div className="charts-section">
+          <div className="charts-label">Adaptive calibration — real results</div>
+          <div className="charts-grid">
+            <div>
+              <img src="/charts/03-summary-slide.png" alt="Agora adaptive-T calibration summary — ECE reduced 54%, accuracy preserved" className="chart-img" />
+              <p className="chart-caption">
+                Adaptive temperature scaling reduced expected calibration error by 54% while preserving transcription accuracy. Tested on real-world multilingual audio.
+              </p>
+            </div>
+            <div>
+              <img src="/charts/01-ece-comparison-bar.png" alt="ECE comparison — before vs after adaptive-T calibration" className="chart-img" />
+              <p className="chart-caption">
+                Expected Calibration Error (ECE) before and after adaptive-T across vendor models. Lower is better.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="cta-row">
