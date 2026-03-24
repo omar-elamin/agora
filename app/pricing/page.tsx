@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import NavHeader from "../components/NavHeader";
 
 export default function PricingPage() {
@@ -236,7 +236,7 @@ export default function PricingPage() {
       `}</style>
 
       <div className="pricing-page">
-        <NavHeader />
+        <Suspense fallback={null}><NavHeader /></Suspense>
         <div className="pricing-body">
 
           {/* === 1. the cost you're not seeing === */}
