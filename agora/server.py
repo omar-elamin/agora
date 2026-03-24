@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import os
 from collections import Counter
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from agora.eval.calibration.adaptive_temperature import adaptive_temperature
 from agora.eval.calibration.speaker_locale import route_speaker_locale
 from agora.eval.sentiment_ood import run_sentiment_ood_eval
 
@@ -22,6 +24,8 @@ class CalibrateRequest(BaseModel):
     wer_estimate: Optional[float] = None
     wer_threshold: float = 0.15
     wer_gating: bool = True
+    pseudo_conf: Optional[float] = None
+    dg_confidence: Optional[float] = None
 
 
 class SentimentRequest(BaseModel):
@@ -39,13 +43,26 @@ def health() -> dict[str, str]:
 def calibrate(req: CalibrateRequest) -> dict:
     flags: list[str] = []
 
-    # LANGUAGE GUARD — highest priority
+    # STEALTH FAIL DETECTION — Japanese stealth fail signals
+    # OR logic: either signal alone triggers human review flag
+    stealth_flags = []
+    if req.dg_confidence is not None and req.dg_confidence >= 0.936:
+        stealth_flags.append("DG_OVERCONFIDENT")
+    if req.lang_prob_en is not None and req.lang_prob_en < 0.80:
+        stealth_flags.append("LOW_LANG_PROB_EN")
+
+    if stealth_flags:
+        flags.extend(stealth_flags)
+        flags.append("STEALTH_FAIL_SUSPECT")
+
+    # LANGUAGE GUARD — highest priority early return
     if req.lang_prob_en is not None and req.lang_prob_en < 0.80:
         return {
             "T_applied": 1.0,
             "accent_group": "unknown",
             "detection_method": "language_guard",
-            "flags": ["LANGUAGE_SWITCH_RISK"],
+            "flags": ["LANGUAGE_SWITCH_RISK"] + flags,
+            "human_review": "STEALTH_FAIL_SUSPECT" in flags,
         }
 
     # Route via speaker_locale (with phone proxy / whisper_lang fallbacks)
@@ -59,6 +76,12 @@ def calibrate(req: CalibrateRequest) -> dict:
     accent_group: str = routed["t_class"]
     detection_method: str = routed["locale_source"]
 
+    # ADAPTIVE TEMPERATURE OVERRIDE
+    calibration_mode = os.environ.get("CALIBRATION_MODE", "fixed")
+    if calibration_mode == "adaptive" and req.pseudo_conf is not None:
+        t_applied = adaptive_temperature(req.pseudo_conf, mode="adaptive")
+        flags.append("ADAPTIVE_TEMP")
+
     # WER GATING
     if req.wer_gating and req.wer_estimate is not None and req.wer_estimate > req.wer_threshold:
         capped = min(t_applied, 2.0)
@@ -70,7 +93,9 @@ def calibrate(req: CalibrateRequest) -> dict:
         "T_applied": t_applied,
         "accent_group": accent_group,
         "detection_method": detection_method,
+        "calibration_mode": calibration_mode,
         "flags": flags,
+        "human_review": "STEALTH_FAIL_SUSPECT" in flags,
     }
 
 
