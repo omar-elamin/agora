@@ -167,6 +167,94 @@ export default function Home() {
           line-height: 1.6;
           margin: 0;
         }
+        .integrations-section {
+          width: 100%;
+        }
+        .integrations-subhead {
+          color: #a3a3a3;
+          font-size: 0.95rem;
+          line-height: 1.7;
+          margin: 0 0 2.5rem;
+          max-width: 600px;
+        }
+        .integration-block {
+          margin: 0 0 2.5rem;
+        }
+        .integration-title {
+          color: #22c55e;
+          font-size: 0.95rem;
+          font-weight: 600;
+          margin: 0 0 0.75rem;
+        }
+        .integration-text {
+          color: #a3a3a3;
+          font-size: 0.88rem;
+          line-height: 1.7;
+          margin: 0 0 1rem;
+        }
+        .integration-text strong {
+          color: #c4c4c4;
+          font-weight: 600;
+        }
+        .integration-list {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 1rem;
+        }
+        .integration-list li {
+          color: #a3a3a3;
+          font-size: 0.88rem;
+          line-height: 1.7;
+          padding-left: 1.2rem;
+          position: relative;
+        }
+        .integration-list li::before {
+          content: "—";
+          position: absolute;
+          left: 0;
+          color: #444;
+        }
+        .integration-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 0 0 1.5rem;
+          font-size: 0.85rem;
+          font-family: var(--font-mono, monospace);
+        }
+        .integration-table th,
+        .integration-table td {
+          border: 1px solid #1e1e1e;
+          padding: 0.6rem 1rem;
+          text-align: left;
+        }
+        .integration-table th {
+          color: #e5e5e5;
+          font-weight: 600;
+          background: #111;
+        }
+        .integration-table td {
+          color: #a3a3a3;
+        }
+        .integration-table td:first-child {
+          color: #666;
+          font-size: 0.8rem;
+        }
+        .integration-note {
+          color: #666;
+          font-size: 0.85rem;
+          line-height: 1.6;
+          margin: 0 0 1.5rem;
+          font-style: italic;
+        }
+        .integration-cta {
+          color: #22c55e;
+          font-size: 0.88rem;
+          text-decoration: none;
+          transition: color 0.15s;
+        }
+        .integration-cta:hover {
+          color: #4ade80;
+        }
       `}</style>
 
       <main className="landing">
@@ -252,6 +340,108 @@ export default function Home() {
           <p className="cta-note">
             POST /api/v1/keys to generate a key. First 5 evals are free.
           </p>
+        </div>
+
+        <hr className="divider" />
+
+        <div className="integrations-section">
+          <div className="api-label">integrations — not all audio is equal</div>
+          <p className="integrations-subhead">
+            agora works with Aircall, Zoom, and Twilio. they all connect. they don&apos;t all perform the same.
+          </p>
+
+          <div className="integration-block">
+            <div className="integration-title">zoom + twilio — full accuracy</div>
+            <p className="integration-text">
+              zoom and twilio give agora two separate audio tracks: one for your rep, one for the customer.
+              no guessing, no mixing. agora knows exactly who said what, routes multilingual speech correctly,
+              and delivers eval scores you can trust.
+            </p>
+            <p className="integration-text">
+              <strong>best for:</strong> multilingual call centers, MENA/LATAM/South Asia teams, high-volume
+              accounts, any use case where rep vs. customer accuracy matters most
+            </p>
+          </div>
+
+          <div className="integration-block">
+            <div className="integration-title">aircall — supported, with a caveat</div>
+            <p className="integration-text">
+              aircall is fully supported. but we&apos;re going to be upfront with you.
+            </p>
+            <p className="integration-text">
+              aircall delivers a single mixed audio file — both voices in one track. agora uses speaker
+              diarization to separate rep from customer, and it works well for standard english calls.
+              but it&apos;s not the same as having two clean channels.
+            </p>
+            <p className="integration-text"><strong>where aircall falls short:</strong></p>
+            <ul className="integration-list">
+              <li>
+                <strong>bilingual calls</strong> — if your reps switch between languages mid-call, or handle
+                calls in arabic, spanish, french alongside english, accuracy drops materially. diarization on
+                mixed mono was not built for this.
+              </li>
+              <li>
+                <strong>acoustically similar voices</strong> — rare, but on calls where the voices are too
+                similar, the model can&apos;t reliably tell them apart
+              </li>
+              <li>
+                <strong>confidence</strong> — aircall segments are flagged in your dashboard so you always know
+                which calls came from mono audio
+              </li>
+            </ul>
+            <p className="integration-text">
+              aircall is a great fit if your calls are english-dominant and you&apos;re not doing high-volume
+              multilingual work. if you are — zoom or twilio will serve you significantly better.
+            </p>
+          </div>
+
+          <table className="integration-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>zoom</th>
+                <th>twilio</th>
+                <th>aircall</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>per-speaker audio</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌ mono only</td>
+              </tr>
+              <tr>
+                <td>multilingual accuracy</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌ unreliable</td>
+              </tr>
+              <tr>
+                <td>english-only accuracy</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅ good</td>
+              </tr>
+              <tr>
+                <td>recommended tier</td>
+                <td>A</td>
+                <td>A</td>
+                <td>B</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p className="integration-note">
+            we&apos;d rather tell you this upfront than let you find it out after you&apos;ve connected your call center.
+          </p>
+
+          <a
+            href="mailto:rachel@caretta.so?subject=Integration question"
+            className="integration-cta"
+          >
+            questions about which integration fits your team? talk to us →
+          </a>
         </div>
 
         <hr className="divider" />
